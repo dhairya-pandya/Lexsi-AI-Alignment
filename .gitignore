@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.superpowers/
+results/**/cache*.jsonl
+*.pt
+*.gguf
+.DS_Store
