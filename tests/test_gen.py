@@ -77,3 +77,19 @@ def test_hf_generator_greedy_shapes(tiny_model, tiny_tok):
 def test_hf_generator_key_covers_runtime_settings(tiny_model, tiny_tok):
     gen = HFGenerator(model=tiny_model, tok=tiny_tok, revision="t", max_new_tokens=3)
     assert {"backend", "dtype", "attn_implementation"} <= set(gen.gen_params)
+
+
+def test_first_token_prob_only_requests_last_logits(tiny_model, tiny_tok):
+    seen = {}
+    orig = tiny_model.forward
+
+    def spy(*a, **kw):
+        seen.update(kw)
+        return orig(*a, **kw)
+
+    tiny_model.forward = spy
+    try:
+        first_token_refusal_prob(tiny_model, [rendered(tiny_tok).input_ids], [5])
+    finally:
+        tiny_model.forward = orig
+    assert seen.get("logits_to_keep") == 1

@@ -44,6 +44,7 @@ def first_token_refusal_prob(model, input_ids_batch: list[list[int]], opener_ids
         for j, x in enumerate(chunk):  # left padding so the last position is the real last token
             ids[j, width - len(x):] = torch.tensor(x, device=device)
             mask[j, width - len(x):] = 1
-        logits = model(input_ids=ids, attention_mask=mask).logits[:, -1, :].float()
+        # Only the last position is needed; full-sequence logits at 6K x 262K vocab would not fit in memory.
+        logits = model(input_ids=ids, attention_mask=mask, logits_to_keep=1).logits[:, -1, :].float()
         out += torch.softmax(logits, dim=-1)[:, idx].sum(-1).tolist()
     return out

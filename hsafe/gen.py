@@ -104,6 +104,19 @@ class VLLMGenerator:
         return outs
 
 
+    def close(self) -> None:
+        """Shut down the engine (it runs in a separate process holding most of the GPU)."""
+        import gc
+        try:
+            self.llm.llm_engine.engine_core.shutdown()
+        except Exception:
+            pass
+        del self.llm
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+
 class CachedGenerator:
     """Wraps a generator; rows already in the JSONL cache are never regenerated."""
 

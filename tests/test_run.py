@@ -192,3 +192,16 @@ def test_runner_accepts_judge_class_as_factory(setup):
     tmp, gen, tok = setup
     out = run(cfg(tmp, name="cls"), generator=gen, tok=tok, judge=MockJudge)  # a class, as main() passes
     assert (out / "judged.jsonl").exists()
+
+
+def test_runner_closes_generator_before_judge_factory(setup):
+    tmp, gen, tok = setup
+    events = []
+    gen.close = lambda: events.append("close")
+
+    def factory():
+        events.append("judge")
+        return MockJudge()
+
+    run(cfg(tmp, name="close"), generator=gen, tok=tok, judge=factory)
+    assert events == ["close", "judge"]

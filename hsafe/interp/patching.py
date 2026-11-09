@@ -51,7 +51,7 @@ def patch_layers(model, source, target, layers: list[int], component: str, opene
             h.remove()
     handles = [m.register_forward_hook(patcher(i)) for i, m in zip(layers, mods)]
     try:
-        logits = model(input_ids=ids_tensor(model, target.input_ids)).logits[0, -1].float()
+        logits = model(input_ids=ids_tensor(model, target.input_ids), logits_to_keep=1).logits[0, -1].float()
     finally:
         for h in handles:
             h.remove()

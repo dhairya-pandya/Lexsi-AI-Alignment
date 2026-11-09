@@ -194,9 +194,11 @@ def run(cfg: RunConfig, generator=None, tok=None, judge=None) -> Path:
     labels: list[str | None] = [None] * len(gens)
     if generated and judge is not None:
         if isinstance(judge, type) or not hasattr(judge, "judge"):  # a factory (class or callable): free GPU memory, then build
+            if hasattr(generator, "close"):
+                generator.close()  # e.g. shut down a vLLM engine process
             if hasattr(generator, "model"):
                 generator.model = None
-                _empty_cuda_cache()
+            _empty_cuda_cache()
             judge = judge()
         judged = judge_all([r for r, _ in items], gens, judge)
         labels = [j.label for j in judged]
