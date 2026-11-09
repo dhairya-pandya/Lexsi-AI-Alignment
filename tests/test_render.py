@@ -100,3 +100,22 @@ def test_real_system_turn_is_359_tokens():
 def test_distance_below_overhead_raises(tiny_tok):
     with pytest.raises(ValueError, match="below the minimum"):
         r(tiny_tok, "P-default", d=5, filler="F3")
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("filler", ["F1", "F2", "F3"])
+@pytest.mark.parametrize("condition", ["P-default", "P-none", "P-reanchor"])
+def test_real_distance_exact(filler, condition):
+    from transformers import AutoTokenizer
+    import yaml
+    from hsafe.records import read_jsonl
+    m = yaml.safe_load(open("configs/models.yaml"))["tiny-aya-global"]
+    tok = AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
+    for r in read_jsonl("data/prompts/harmful_en.jsonl", PromptRecord)[:3]:
+        for d in (500, 3900, 4100, 7400):
+            out = render(r, condition, d, filler, tok, "tiny_aya")
+            anchor = out.preamble_span[1] if out.preamble_span else 1
+            assert out.request_span[0] - anchor == d
+            assert tok(out.text, add_special_tokens=False)["input_ids"] == out.input_ids
+            assert tok.decode(out.input_ids[out.request_span[0]:out.request_span[1]]).strip() == r.text.strip()
+            assert len(out.input_ids) <= MAX_CONTEXT

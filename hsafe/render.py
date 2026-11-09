@@ -14,6 +14,8 @@ EXPANSE_CONDITIONS = ("P-default-injected", "P-nosys", "P-dev")
 _NEUTRAL = ("The library opens at nine and closes at five on weekdays. Visitors may borrow up to six books. "
             "The reading room is on the second floor next to the map collection. ")
 _MAX_ITERS = 8
+_NEIGHBOURHOOD = 12
+_SEED_RETRIES = 5
 _DEFAULT_POOL_DIR = Path(__file__).resolve().parent.parent / "data" / "filler"
 
 
@@ -100,6 +102,34 @@ def _spans(text, tok, request, has_system):
     return ids, pre, (req_start, req_end), anchor
 
 
+def _search(build, tok, request, has_system, d, filler, condition):
+    """Find a filler length whose full tokenization puts the request exactly d tokens after the anchor."""
+    n, tried, hit = d, {}, None
+    for _ in range(_MAX_ITERS):
+        text = build(n)
+        ids, pre, req, anchor = _spans(text, tok, request, has_system)
+        gap = tried[n] = req[0] - anchor
+        if gap == d:
+            hit = (text, ids, pre, req)
+            break
+        if n == 1 and gap > d:
+            raise ValueError(f"d={d} is below the minimum distance {gap} for filler {filler}/{condition}")
+        n = max(1, n + (d - gap))
+    if hit is None:
+        # Token merges at the filler/request boundary can make the step search oscillate around d
+        # (real BPE tokenizers); try nearby filler lengths before giving up.
+        best = min(tried, key=lambda k: abs(tried[k] - d))
+        for n in sorted(range(max(1, best - _NEIGHBOURHOOD), best + _NEIGHBOURHOOD + 1), key=lambda k: abs(k - best)):
+            if n in tried:
+                continue
+            text = build(n)
+            ids, pre, req, anchor = _spans(text, tok, request, has_system)
+            if req[0] - anchor == d:
+                hit = (text, ids, pre, req)
+                break
+    return hit
+
+
 def render(record: PromptRecord, condition: str, d: int | None, filler: str | None, tok, family: str,
            dev_preamble: str | None = None, preamble: Preamble | None = None, filler_pool=None,
            seed: int = 0) -> Rendered:
@@ -116,10 +146,11 @@ def render(record: PromptRecord, condition: str, d: int | None, filler: str | No
     if (d is None) != (filler is None):
         raise ValueError("d and filler must be given together")
 
+    pool = None if filler is None else (filler_pool if filler_pool is not None else _load_pool(filler))
+    filler_seed = seed
+
     def build(n):
-        content = None
-        if filler is not None:
-            content = make_filler(filler, n, tok, seed, filler_pool if filler_pool is not None else _load_pool(filler))
+        content = None if filler is None else make_filler(filler, n, tok, filler_seed, pool)
         return _build(record, condition, family, tok, preamble, dev_preamble, filler, content)
 
     if d is None:
@@ -130,18 +161,16 @@ def render(record: PromptRecord, condition: str, d: int | None, filler: str | No
         pre_len = len(tok(preamble.system_text, add_special_tokens=False)["input_ids"]) if has_system else 0
         if d + req_len + pre_len > MAX_CONTEXT:
             raise ContextTooLong(f"d={d} + request {req_len} + preamble {pre_len} > {MAX_CONTEXT}")
-        n = d
-        for _ in range(_MAX_ITERS):
-            text = build(n)
-            ids, pre, req, anchor = _spans(text, tok, record.text, has_system)
-            gap = req[0] - anchor
-            if gap == d:
+        hit = None
+        for attempt in range(_SEED_RETRIES):
+            # A boundary merge can make some d unreachable for one filler passage; reshuffle and retry.
+            filler_seed = seed + 1000 * attempt
+            hit = _search(build, tok, record.text, has_system, d, filler, condition)
+            if hit is not None:
                 break
-            if n == 1 and gap > d:
-                raise ValueError(f"d={d} is below the minimum distance {gap} for filler {filler}/{condition}")
-            n = max(1, n + (d - gap))
-        else:
-            raise ValueError(f"could not hit exact distance d={d} (last gap {gap})")
+        if hit is None:
+            raise ValueError(f"could not hit exact distance d={d} for {filler}/{condition}")
+        text, ids, pre, req = hit
     if len(ids) > MAX_CONTEXT:
         raise ContextTooLong(f"rendered length {len(ids)} > {MAX_CONTEXT}")
     model = getattr(tok, "name_or_path", "") or family
