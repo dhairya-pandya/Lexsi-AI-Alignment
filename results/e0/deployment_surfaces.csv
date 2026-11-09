@@ -1,0 +1,8 @@
+surface,includes_default_preamble,evidence
+HF transformers apply_chat_template (tiny-aya-global/fire),yes,"tokenizer_config.json chat_template (fixture tests/fixtures/tiny_aya_chat_template.jinja) always emits the System Preamble"
+vLLM chat endpoint (/v1/chat/completions; uses the HF chat template),yes,same template as above (vLLM reads tokenizer chat_template)
+Official GGUF (CohereLabs/tiny-aya-global-GGUF @ a602ea7) via llama.cpp --jinja / LM Studio,yes,"HfApi().model_info(expand=['gguf']).gguf.chat_template contains 'contextual safety mode' (3239 chars, identical to HF)"
+llama.cpp without --jinja (built-in Command-R template),no (unverified),"built-in command-r template renders turns only; check with llama-cli --verbose-prompt"
+Ollama community: NeonIH/tiny-aya-global-tools,yes (+ custom SYSTEM),"registry.ollama.ai manifest: template layer contains the preamble; system layer adds 'You are a helpful multilingual assistant...' "
+Ollama community: s1gnature/tiny-aya,no,"registry.ollama.ai manifest has no template layer -> Ollama falls back to raw {{ .Prompt }}"
+Raw completion APIs (vLLM /v1/completions; HF text-generation without template),no,prompt sent verbatim; no chat template applied

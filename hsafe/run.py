@@ -170,8 +170,9 @@ def run(cfg: RunConfig, generator=None, tok=None, judge=None) -> Path:
     rows = []
     for (r, rd), g, lab in zip(items, gens, labels):
         for metric, value in _metrics(r, g, lab, generated).items():
-            rows.append({"condition": rd.condition, "d": rd.d, "filler": rd.filler, "kind": r.kind,
+            rows.append({"record_id": r.id, "condition": rd.condition, "d": rd.d, "filler": rd.filler, "kind": r.kind,
                          "bucket": r.bucket, "metric": metric, "value": value})
+    pd.DataFrame(rows).to_csv(out / "items.csv", index=False)
     _summarize(rows).to_csv(out / "summary.csv", index=False)
     return out
 

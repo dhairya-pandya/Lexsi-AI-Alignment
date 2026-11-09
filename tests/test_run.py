@@ -101,3 +101,11 @@ def test_all_configs_parse():
             continue
         c = RunConfig.from_yaml(path)
         assert c.split == "eval" and c.conditions and c.name == path.stem
+
+
+def test_runner_writes_items_for_gates(setup):
+    tmp, gen, tok = setup
+    out = run(cfg(tmp), generator=gen, tok=tok, judge=MockJudge())
+    items = pd.read_csv(out / "items.csv")
+    assert {"record_id", "condition", "d", "filler", "kind", "bucket", "metric", "value"} <= set(items.columns)
+    assert items.groupby(["record_id", "metric"])["condition"].nunique().max() == 2
