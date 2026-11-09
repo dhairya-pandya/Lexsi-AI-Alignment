@@ -19,6 +19,7 @@ dependencies = [
   "safetensors",
   "datasets",
   "nnsight>=0.8,<0.9",
+  "accelerate",
   "matplotlib",
   "tabulate",
 ]
