@@ -176,6 +176,7 @@ Also audit the deployment surface:
   - first-token refusal probability (probability mass on the model's refusal openers, derived empirically from its refusals);
   - refusal-prefix string match.
 - **Multilingual:** Qwen3Guard-Gen-4B, which covers 119 languages and runs on a T4. **[my call]**
+- **Scoring standard [team]:** one harm-judge standard (harmful compliance or refusal) for every bucket. The ACCEPT bucket is reported *descriptively* as the "preamble policy effect". Removing the preamble may make the model refuse more there, and we report that as a finding, never as something to "fix" toward more compliance.
 - **Validation:** hand-label about 150 responses across conditions and buckets, blind to the judge. Report agreement (Cohen's κ). If κ < 0.6 for any bucket, report that bucket on first-token refusal probability only.
 
 ## 6. Experiments
@@ -184,13 +185,17 @@ Also audit the deployment surface:
 |---|---|---|---|
 | E0 | Does the stack run, and are the effects real? | Load global/fire/expanse. Render each condition, then check token counts and that BOS appears once. Run three 1-hour gates (§7) | Go/no-go, `findings.json` |
 | E1 | How much safety comes from the preamble? | All prompt sets × {P-default, P-none, P-dev, P-len, P-strict} on global, fire and expanse, at short distance. Split by ACCEPT/REJECT/UNLISTED bucket | Refusal, harmful compliance and over-refusal per condition × bucket, with paired CIs. Plus the deployment-surface table |
-| E2 | Is there a horizon at 4,096? | Distance d between the end of the preamble and the request, d ∈ {0.5, 1, 2, 3, 3.5, 3.9, 4.1, 4.5, 5, 6, 7, 7.6}K tokens. Fillers F1–F3. Conditions P-default, P-none (shows the length effect alone) and P-reanchor. Models global and expanse (no window). Measure first-token refusal probability on all prompts; generation plus judge on a subset. Run the preamble-rule probes and capability items on the same axis | Curves of refusal, rule compliance and capability against distance, per model. Statistical test for a step at 4,096 vs a smooth decline (§8) |
+| E2 | Is there a horizon at 4,096? | Distance d between the end of the preamble and the request, d ∈ {0.5, 1, 2, 3, 3.5, 3.9, 4.1, 4.5, 5, 6, 7, 7.4}K tokens. Fillers F1–F3. Conditions P-default, P-none (shows the length effect alone) and P-reanchor. Models global and expanse (no window). Measure first-token refusal probability on all prompts; generation plus judge on a subset. Run the preamble-rule probes and capability items on the same axis | Curves of refusal, rule compliance and capability against distance, per model. Statistical test for a step at 4,096 vs a smooth decline (§8) |
 | E3 | Where does the preamble act? | (a) Attention mass from request tokens to preamble tokens, per layer and head; sliding vs full layers; vs distance. (b) Activation patching: move full-attention-layer outputs (and, separately, sliding-layer outputs) from P-default into P-none at the request positions; measure refusal recovery. (c) Project the residual stream onto the refusal direction per layer under each condition. (d) CircuitKIT EAP-IG, clean = P-default and corrupt = P-none (≤512 tokens), metric = refusal-token logit difference; top heads; faithfulness check | "X% of the preamble's effect passes through heads {…} in full-attention layers". Figures for the circuit and attention mass |
 | E4 | Does the preamble explain weak steering? | Extract the refusal direction under P-default and under P-none (fit split; layer from SafeTune's sweep, hand-checked). Steer harmful and benign prompts across a coefficient sweep normalised to activation norm, in both conditions. Add a random-direction control. Measure the direction's cosine with the unembedding rows of refusal-opener tokens | Steering effect size with and without the preamble. Direction-vs-unembedding analysis |
-| E5 | Can the policy be restored without the preamble? | (a) **Preamble vector:** the mean activation difference, P-default minus P-none, at request positions in the E3-selected layers (fit split), added at inference when the preamble is missing or out of view. (b) **Re-anchoring** baseline. (c) *Stretch:* a context-distillation LoRA (SafeTune or PEFT) so the model behaves under P-none as it does under P-default | Before/after table: P-none and long-distance P-default, with vs without the fix. Covers refusal, harmful compliance, over-refusal, rule compliance and capability, plus the multilingual arm |
+| E5 | Can the preamble's *refusals* be restored without the preamble? **[team]** The fix targets refusal only (REJECT and UNLISTED buckets). It must never raise compliance; the ACCEPT bucket is a guard metric that must not move toward more compliance | (a) **Preamble vector:** the mean activation difference, P-default minus P-none, at request positions in the E3-selected layers (fit split), added at inference when the preamble is missing or out of view. (b) **Re-anchoring** baseline. (c) *Stretch:* a context-distillation LoRA (SafeTune or PEFT) so the model behaves under P-none as it does under P-default | Before/after table: P-none and long-distance P-default, with vs without the fix. Covers refusal, harmful compliance, over-refusal, rule compliance and capability, plus the multilingual arm |
 | S1 | *(side bet)* Do under-trained tokens break refusal? | Take Magikarp's verified under-trained tokens for tiny-aya-global and keep only those reachable by normal tokenisation. Insert k ∈ {1, 3, 5} near the request. Compare against a control of ordinary rare tokens | Attack success against k, with CIs. Ships only if the gate passes |
 
-**Replication [my call]:** tiny-aya-fire runs E1 plus the E2 headline curve. Aya Expanse runs E1 (no preamble, so P-dev vs a system-less run) and E2.
+**Replication [my call]:**
+- tiny-aya-fire runs E1 plus the E2 headline curve.
+- Aya Expanse gets **Tiny Aya's exact 359-token preamble text as its system message** ("P-default-injected"), alongside a system-less run. It runs E1 and E2 with these. This makes Expanse a true architectural control: same text, full attention everywhere, no 4K window.
+
+**E2 distance grid:** the largest point is 7.4K (not 7.6K), so preamble + filler + request stays at 7,900 tokens or fewer. d is measured from the end of the preamble to the start of the request.
 
 ## 7. Day-1 gates (Nov 11) and fallback
 
@@ -200,11 +205,17 @@ Also audit the deployment surface:
 | G2 horizon | 100 harmful + 50 rule probes, P-default at d = 3K vs 5.5K, filler F2 | Refusal or rule compliance changes by ≥5 pp, and differs from the P-none length effect |
 | G3 tokens | Top 50 reachable under-trained tokens × 50 harmful prompts vs the rare-token control | ≥10 pp higher attack success |
 
+**Decision rule [my call]:**
+- A gate passes when the paired bootstrap 95% CI of the difference excludes 0. G1 and G2 use the pooled REJECT+UNLISTED harmful set (refusal) or the pooled benign set (over-refusal or rule compliance). G3 uses the attack-success difference.
+- Per-bucket numbers are descriptive only at gate time.
+- A G1 "pass" that comes only from the ACCEPT bucket becoming *more compliant* counts as a pass for E1 (it is a finding). It does not count as a pass for E5's fix target.
+
 **What each outcome means:**
 - **G1 passes:** E1, E3, E4 and E5 go ahead, at minimum on the P-default vs P-none contrast.
 - **G2 passes:** E2 becomes the headline.
 - **G2 fails:** E2 is reported as a short null, and E1/E3/E4 carry the paper.
 - **G3 fails:** S1 is dropped.
+- **G1 fails but G2 passes:** E3, E4 and E5 switch from the P-default vs P-none contrast to a near-vs-far contrast (P-default at 3K vs 5.5K). E2 becomes the headline.
 - **G1 and G2 both fail:** switch to the fallback project. **[team decision on Nov 11 evening]**
 
 **Fallback** (from the research file): English tamper-resistance defenses (Lisa, Booster, Vaccine, RepNoise) against harmful LoRA fine-tuning in English, Hindi and Bengali, on tiny-aya-fire. No other team is working on this, and it runs on Kaggle T4s.
@@ -222,7 +233,7 @@ Also audit the deployment surface:
 - E2 shows a step at 4,096 that the benign controls don't show, or a clean null.
 - E3 puts most of the effect in a small set of full-attention heads.
 - E4 shows that steering is larger without the preamble.
-- E5 restores at least half of the P-default behaviour under P-none, with over-refusal up by 3 pp or less.
+- E5 restores at least half of P-default's REJECT+UNLISTED refusal rate under P-none and at long distance. Over-refusal rises by 3 pp or less, and ACCEPT-bucket compliance does not rise.
 
 ## 9. Deliverables (mapped to the submission checklist)
 

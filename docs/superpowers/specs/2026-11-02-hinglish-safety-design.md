@@ -1,3 +1,5 @@
+> **Superseded by [2026-11-10-where-safety-lives-design.md](2026-11-10-where-safety-lives-design.md).**
+
 # Design: Safety Fails Silently in Hinglish — and Compression Makes It Worse
 
 Lexsi AI Safety & Alignment Hackathon · Track 2 (2a + 2b) · Written 2026-11-02
