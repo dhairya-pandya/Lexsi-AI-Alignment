@@ -1,0 +1,17 @@
+# Pinned revisions (HfApi().model_info(id).sha on 2026-11-10). Every load uses revision=.
+tiny-aya-global:
+  id: CohereLabs/tiny-aya-global
+  revision: af89d219b53ed9b13b8a4645f9c8028973510324
+  family: tiny_aya
+tiny-aya-fire:
+  id: CohereLabs/tiny-aya-fire
+  revision: 73500c80fcb6c8bea3e830c21d5d2920249a0e1a
+  family: tiny_aya
+tiny-aya-base:
+  id: CohereLabs/tiny-aya-base
+  revision: d62ac17e241c871fc52e9a95d7b0e2615189d7d5
+  family: tiny_aya
+aya-expanse-8b:
+  id: CohereLabs/aya-expanse-8b
+  revision: 5062468bf9bc0c6035fd64e06274333ec127d980
+  family: expanse

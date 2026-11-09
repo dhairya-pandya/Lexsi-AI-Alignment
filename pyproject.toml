@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hsafe"
+version = "0.1.0"
+description = "Where does Tiny Aya's safety live? Preamble dependence, the 4K sliding-window horizon, and steering."
+requires-python = ">=3.12"
+dependencies = [
+  "torch",
+  "transformers>=5.15",
+  "tokenizers",
+  "numpy",
+  "scipy",
+  "pandas",
+  "pyyaml",
+  "huggingface_hub",
+  "safetensors",
+  "datasets",
+  "nnsight>=0.8,<0.9",
+]
+
+[project.optional-dependencies]
+gpu = [
+  "vllm>=0.30",
+  "safetune @ git+https://github.com/Lexsi-Labs/SafeTune",
+  "auditkit",
+  "curatorkit",
+]
+demo = ["gradio", "spaces", "matplotlib"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["hsafe*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: needs real gated Tiny Aya weights/tokenizer (HF_TOKEN with access)"]
+addopts = "-m 'not slow'"
