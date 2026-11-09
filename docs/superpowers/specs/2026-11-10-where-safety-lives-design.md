@@ -4,7 +4,7 @@ Lexsi AI Safety & Alignment Hackathon · Track 2 · written 2026-11-10. This rep
 - Research behind this choice: [2026-11-10-idea-search.md](../../research/2026-11-10-idea-search.md)
 - Rules and logistics: [HACKATHON_NOTES.md](../../../HACKATHON_NOTES.md)
 
-Legend: **[team]** = decided by the team. **[my call]** = Claude's default; the team can override it. Anything unmarked is left to the builder.
+Legend: **[team]** = decided by the team. **[my call]** = default choice; the team can override it. Anything unmarked is left to the builder.
 
 ---
 
@@ -228,7 +228,7 @@ Also audit the deployment surface:
 - **Steering:** the change in refusal rate against coefficient, with and without the preamble. Compare the area under the curve.
 - **Size [my call]:** about 300 harmful prompts, so CI half-widths are about ±5 pp at 50%. The E2 subset that gets generation plus judge is about 100 prompts per distance.
 
-**What success looks like (Claude's guess; the team should confirm):**
+**What success looks like (best guess; the team should confirm):**
 - E1 shows a bucket-dependent preamble effect. Opposite signs for ACCEPT vs other buckets would be the cleanest result.
 - E2 shows a step at 4,096 that the benign controls don't show, or a clean null.
 - E3 puts most of the effect in a small set of full-attention heads.

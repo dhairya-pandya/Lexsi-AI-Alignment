@@ -6,7 +6,7 @@ Lexsi AI Safety & Alignment Hackathon · Track 2 (2a + 2b) · Written 2026-11-02
 Rules/logistics reference: [HACKATHON_NOTES.md](../../../HACKATHON_NOTES.md)
 Related work and the reasoning behind the methods chosen below: [2026-11-02-related-work.md](../../research/2026-11-02-related-work.md)
 
-Legend: **[team]** = decided by the team. **[my call]** = Claude's default, open to override. Everything else is left to the builder.
+Legend: **[team]** = decided by the team. **[my call]** = default choice, open to override. Everything else is left to the builder.
 
 ---
 
