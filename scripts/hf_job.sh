@@ -2,7 +2,7 @@
 # Runs inside an HF Job. Env: HF_TOKEN (secret), CODE_REPO, RESULTS_REPO, RUNS (space-separated config names),
 # optional POST (shell command run after the configs), DTYPE (override config dtype, e.g. bfloat16 on L4+).
 set -euo pipefail
-export HF_HUB_ENABLE_HF_TRANSFER=0 PYTHONUNBUFFERED=1
+export HF_HUB_ENABLE_HF_TRANSFER=0 PYTHONUNBUFFERED=1 VLLM_USE_FLASHINFER_SAMPLER=0  # no nvcc in the image
 pip install -q -U huggingface_hub >/dev/null
 hf download "$CODE_REPO" --local-dir /code >/dev/null
 cd /code
