@@ -193,7 +193,7 @@ def run(cfg: RunConfig, generator=None, tok=None, judge=None) -> Path:
             g.first_token_refusal_prob = p
     labels: list[str | None] = [None] * len(gens)
     if generated and judge is not None:
-        if not hasattr(judge, "judge"):  # a factory: free the generator's GPU memory, then build the judge
+        if isinstance(judge, type) or not hasattr(judge, "judge"):  # a factory (class or callable): free GPU memory, then build
             if hasattr(generator, "model"):
                 generator.model = None
                 _empty_cuda_cache()

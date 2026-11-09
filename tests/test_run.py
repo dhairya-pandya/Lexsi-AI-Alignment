@@ -186,3 +186,9 @@ def test_runner_regenerates_when_fix_vector_changes_and_keys_match(setup, tiny_m
 def test_capability_answer_parsing(out, ok):
     from hsafe.run import _answer_letter
     assert (_answer_letter(out) == "A") is ok
+
+
+def test_runner_accepts_judge_class_as_factory(setup):
+    tmp, gen, tok = setup
+    out = run(cfg(tmp, name="cls"), generator=gen, tok=tok, judge=MockJudge)  # a class, as main() passes
+    assert (out / "judged.jsonl").exists()
