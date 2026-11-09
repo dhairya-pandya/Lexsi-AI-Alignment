@@ -43,6 +43,19 @@ def _neutral_text(tok, n_tokens: int) -> str:
     return tok.decode(ids[:n_tokens])
 
 
+def _length_matched_neutral(tok, reference: str) -> str:
+    """Neutral text whose re-tokenized length equals the reference's (decode/re-encode can merge differently)."""
+    target = len(tok(reference, add_special_tokens=False)["input_ids"])
+    n = target
+    for _ in range(_MAX_ITERS):
+        text = _neutral_text(tok, n)
+        got = len(tok(text, add_special_tokens=False)["input_ids"])
+        if got == target:
+            return text
+        n += target - got
+    return text
+
+
 def _load_pool(filler: str):
     path = _DEFAULT_POOL_DIR / f"{filler.lower()}.jsonl"
     rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
@@ -82,8 +95,7 @@ def _build(record, condition, family, tok, preamble, dev_preamble, filler, fille
         elif condition == "P-strict":
             text = _replace_system(text, strict_preamble(preamble))
         elif condition == "P-len":
-            n = len(tok(preamble.system_text, add_special_tokens=False)["input_ids"])
-            text = _replace_system(text, _neutral_text(tok, n))
+            text = _replace_system(text, _length_matched_neutral(tok, preamble.system_text))
     return text
 
 

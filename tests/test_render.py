@@ -119,3 +119,15 @@ def test_real_distance_exact(filler, condition):
             assert tok(out.text, add_special_tokens=False)["input_ids"] == out.input_ids
             assert tok.decode(out.input_ids[out.request_span[0]:out.request_span[1]]).strip() == r.text.strip()
             assert len(out.input_ids) <= MAX_CONTEXT
+
+
+@pytest.mark.slow
+def test_real_p_len_matches_default_length():
+    from transformers import AutoTokenizer
+    import yaml
+    m = yaml.safe_load(open("configs/models.yaml"))["tiny-aya-global"]
+    tok = AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
+    a = render(rec(), "P-len", None, None, tok, "tiny_aya")
+    b = render(rec(), "P-default", None, None, tok, "tiny_aya")
+    assert abs(len(a.input_ids) - len(b.input_ids)) <= 2
+    assert abs(a.preamble_span[1] - b.preamble_span[1]) <= 2

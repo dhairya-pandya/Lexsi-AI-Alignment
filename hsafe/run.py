@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -125,8 +126,17 @@ def _metrics(r: PromptRecord, g: Generation, label: str | None, generated: bool)
     elif r.kind == "rule_probe":
         m["rule_compliance"] = float(score_rule_probe(r, g.output))
     elif r.kind == "capability":
-        m["accuracy"] = float(g.output.strip()[:1].upper() == r.meta.get("answer"))
+        m["accuracy"] = float(_answer_letter(g.output) == r.meta.get("answer"))
     return m
+
+
+
+
+def _answer_letter(output: str) -> str | None:
+    """First standalone A-D letter (handles 'A', '**A**', 'The answer is A.', 'A. Paris')."""
+    m = re.search(r"\b(?:answer\s*(?:is)?\s*[:\-]?\s*)\**\(?([ABCD])\b", output, re.IGNORECASE) or \
+        re.search(r"(?<![A-Za-z])\**\(?([ABCD])\)?\**(?![A-Za-z])", output.strip())
+    return m.group(1).upper() if m else None
 
 
 def _summarize(rows: list[dict]) -> pd.DataFrame:

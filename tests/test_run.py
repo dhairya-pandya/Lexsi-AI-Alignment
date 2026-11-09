@@ -179,3 +179,10 @@ def test_runner_regenerates_when_fix_vector_changes_and_keys_match(setup, tiny_m
     save_vector({3: torch.randn(tiny_model.config.hidden_size, generator=torch.Generator().manual_seed(2))}, path)
     run(cfg(tmp, name="fx", conditions=["P-none"], fix=fix), generator=gen, tok=tok, judge=MockJudge())
     assert sum(calls) == 2 * n1 > 0
+
+
+@pytest.mark.parametrize("out,ok", [("A", True), ("**A**", True), ("The answer is A.", True), ("A. Paris", True),
+                                    ("B", False), ("Answer: B", False), ("", False)])
+def test_capability_answer_parsing(out, ok):
+    from hsafe.run import _answer_letter
+    assert (_answer_letter(out) == "A") is ok
