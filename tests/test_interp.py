@@ -91,3 +91,15 @@ def test_capture_sees_hook_edits_and_last_layer_is_prenorm(tiny_model, tiny_tok)
         h.remove()
     base = capture_layer_outputs(tiny_model, r.input_ids, [2])[2]
     assert torch.allclose(edited, base + 1.0, atol=1e-5)
+
+
+def test_attention_mass_excludes_bos_and_turn_markers(eager_model, tiny_tok):
+    from hsafe.interp.attention import attention_sink_mass
+    r = rend(tiny_tok, 0)
+    with torch.no_grad():
+        attns = eager_model(input_ids=torch.tensor([r.input_ids]), output_attentions=True).attentions
+    (p0, p1), (q0, q1) = r.preamble_span, r.request_span
+    manual = np.stack([a[0, :, q0:q1, p0 + 3:p1].float().sum(-1).mean(-1).numpy() for a in attns])
+    sink = np.stack([a[0, :, q0:q1, 0].float().mean(-1).numpy() for a in attns])
+    assert np.allclose(attention_mass(eager_model, [r]), manual, atol=1e-5)
+    assert np.allclose(attention_sink_mass(eager_model, [r]), sink, atol=1e-5)
