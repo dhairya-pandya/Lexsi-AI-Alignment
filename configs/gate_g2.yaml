@@ -1,0 +1,15 @@
+# G2: horizon check, P-default at d=3000 vs d=5500 (F2), with P-none at the same lengths. Needs openers from gate_g1.
+name: gate_g2
+model: tiny-aya-global
+family: tiny_aya
+prompt_files: [data/prompts/harmful_en.jsonl, data/prompts/rule_probes.jsonl]
+split: eval
+conditions: [P-default, P-none]
+distances: [3000, 5500]
+fillers: [F2]
+signals: [first_token, generate]
+judge: harm
+backend: hf
+dtype: float16
+n_per_bucket: 100
+openers: results/gate_g1/openers.json

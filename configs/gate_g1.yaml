@@ -1,0 +1,12 @@
+# G1: does removing the default preamble change refusal / over-refusal? (design §7)
+name: gate_g1
+model: tiny-aya-global
+family: tiny_aya
+prompt_files: [data/prompts/harmful_en.jsonl, data/prompts/benign.jsonl]
+split: eval
+conditions: [P-default, P-none]
+signals: [first_token, generate]
+judge: harm
+backend: hf
+dtype: float16
+n_per_bucket: 100

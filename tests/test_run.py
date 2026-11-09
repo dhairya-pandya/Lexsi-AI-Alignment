@@ -1,0 +1,103 @@
+import json
+
+import pandas as pd
+import pytest
+
+from hsafe.gen import HFGenerator
+from hsafe.records import PromptRecord, write_jsonl
+from hsafe.run import RunConfig, run
+
+
+class MockJudge:
+    name = "mock"
+
+    def judge(self, prompts, outputs):
+        return ["unsafe"] * len(outputs)
+
+
+def _records(n=6, split="eval"):
+    out = []
+    for i in range(n):
+        kind = ["harmful", "benign"][i % 2]
+        out.append(PromptRecord(id=f"r{i}", base_id=f"b{i}", text=f"Prompt number {i}?", lang="en", source="unit",
+                                kind=kind, bucket="UNLISTED" if kind == "harmful" else "NA", category="c",
+                                split=split if i % 3 else "fit"))
+    return out
+
+
+@pytest.fixture
+def setup(tmp_path, tiny_model, tiny_tok):
+    write_jsonl(tmp_path / "p.jsonl", _records())
+    pools = tmp_path / "pools"
+    pools.mkdir()
+    (pools / "f2.jsonl").write_text("".join(json.dumps({"text": "Calm river water flows. " * 20}) + "\n" for _ in range(5)))
+    gen = HFGenerator(model=tiny_model, tok=tiny_tok, revision="test", max_new_tokens=3, batch_size=4, opener_ids=[0])
+    return tmp_path, gen, tiny_tok
+
+
+def cfg(tmp_path, **kw):
+    base = dict(name="unit", model="tiny", family="tiny_aya", prompt_files=[str(tmp_path / "p.jsonl")], split="eval",
+                conditions=["P-default", "P-none"], distances=[], fillers=[], signals=["generate"], judge="mock",
+                backend="hf", filler_pool_dir=str(tmp_path / "pools"), out_root=str(tmp_path / "results"))
+    base.update(kw)
+    return RunConfig(**base)
+
+
+def test_runner_end_to_end(setup):
+    tmp, gen, tok = setup
+    out = run(cfg(tmp), generator=gen, tok=tok, judge=MockJudge())
+    df = pd.read_csv(out / "summary.csv")
+    assert list(df.columns) == ["condition", "d", "filler", "kind", "bucket", "metric", "n", "rate", "lo", "hi"]
+    assert set(df["condition"]) == {"P-default", "P-none"}
+    assert "unsafe" in set(df["metric"]) and "over_refusal" in set(df["metric"])
+
+
+def test_runner_rejects_unsplit(setup):
+    tmp, gen, tok = setup
+    write_jsonl(tmp / "p.jsonl", _records(split=None))
+    with pytest.raises(ValueError, match="unsplit"):
+        run(cfg(tmp), generator=gen, tok=tok, judge=MockJudge())
+
+
+def test_runner_skips_too_long(setup):
+    tmp, gen, tok = setup
+    out = run(cfg(tmp, conditions=["P-default"], distances=[300, 7900], fillers=["F2"]), generator=gen, tok=tok,
+              judge=MockJudge())
+    skipped = pd.read_csv(out / "skipped.csv")
+    assert len(skipped) > 0 and (skipped["d"] == 7900).all()
+    assert (pd.read_csv(out / "summary.csv")["d"] == 300).all()
+
+
+def test_runner_eval_only(setup):
+    tmp, gen, tok = setup
+    out = run(cfg(tmp), generator=gen, tok=tok, judge=MockJudge())
+    ids = {json.loads(l)["record_id"] for l in (out / "rendered.jsonl").read_text().splitlines()}
+    fit_ids = {r.id for r in _records() if r.split == "fit"}
+    assert ids and not (ids & fit_ids)
+
+
+def test_runner_builds_judge_after_generation(setup):
+    tmp, gen, tok = setup
+    events = []
+
+    class Spy(type(gen)):
+        pass
+
+    orig = gen.generate
+    gen.generate = lambda rs: (events.append("gen"), orig(rs))[1]
+
+    def factory():
+        events.append("judge")
+        return MockJudge()
+
+    run(cfg(tmp), generator=gen, tok=tok, judge=factory)
+    assert events.index("judge") > max(i for i, e in enumerate(events) if e == "gen")
+
+
+def test_all_configs_parse():
+    from pathlib import Path
+    for path in sorted(Path("configs").glob("*.yaml")):
+        if path.name == "models.yaml":
+            continue
+        c = RunConfig.from_yaml(path)
+        assert c.split == "eval" and c.conditions and c.name == path.stem
