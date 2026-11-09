@@ -37,3 +37,11 @@ def test_gate_report_pairs_by_distance():
     rep = gate_report(pd.concat([near, far]), ("P-default", 3000), ("P-default", 5500), metric="refusal",
                       kind="harmful", pooled_buckets=("UNLISTED",))
     assert rep["n_pairs"] == 150 and rep["pass"] is True
+
+
+def test_load_items_keeps_na_bucket(tmp_path):
+    from hsafe.gates import load_items
+    pd.DataFrame([dict(record_id="r", condition="P-default", d=None, filler=None, kind="benign", bucket="NA",
+                       metric="over_refusal", value=1.0)]).to_csv(tmp_path / "items.csv", index=False)
+    items = load_items(tmp_path)
+    assert items.loc[0, "bucket"] == "NA" and pd.isna(items.loc[0, "d"])

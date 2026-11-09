@@ -41,7 +41,8 @@ def gate_report(items: pd.DataFrame, arm_a, arm_b, metric: str, kind: str,
 
 
 def load_items(run_dir: str | Path) -> pd.DataFrame:
-    return pd.read_csv(Path(run_dir) / "items.csv")
+    # "NA" is a real bucket label (non-harmful prompts); keep it as a string, but still read empty d/filler as NaN.
+    return pd.read_csv(Path(run_dir) / "items.csv", keep_default_na=False, na_values={"d": [""], "filler": [""]})
 
 
 def main() -> None:
