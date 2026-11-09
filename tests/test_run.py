@@ -66,8 +66,8 @@ def test_runner_skips_too_long(setup):
     out = run(cfg(tmp, conditions=["P-default"], distances=[300, 7900], fillers=["F2"]), generator=gen, tok=tok,
               judge=MockJudge())
     skipped = pd.read_csv(out / "skipped.csv")
-    assert len(skipped) > 0 and (skipped["d"] == 7900).all()
-    assert (pd.read_csv(out / "summary.csv")["d"] == 300).all()
+    assert len(skipped) > 0 and (skipped[~skipped["reason"].str.startswith("dropped:")]["d"] == 7900).all()
+    assert not (pd.read_csv(out / "summary.csv")["d"] == 7900).any()
 
 
 def test_runner_eval_only(setup):
@@ -130,3 +130,52 @@ def test_runner_applies_preamble_vector_fix(setup, tiny_model):
     again = pd.read_csv(run(cfg(tmp, name="nofix2", conditions=["P-none"]), generator=gen, tok=tok,
                             judge=MockJudge()) / "items.csv")
     assert np.allclose(base[base.metric == m].value, again[again.metric == m].value)
+
+
+def test_runner_drops_record_from_all_cells_if_any_skip(setup):
+    tmp, gen, tok = setup
+    # P-none fits at d=7000 for short requests where P-default does not (preamble length): every cell must
+    # end up with the same record set.
+    out = run(cfg(tmp, name="balanced", conditions=["P-default", "P-none"], distances=[300, 7000], fillers=["F2"]),
+              generator=gen, tok=tok, judge=MockJudge())
+    items = pd.read_csv(out / "items.csv")
+    sets = items.groupby(["condition", "d"])["record_id"].apply(lambda s: frozenset(s))
+    assert len(set(sets)) <= 1
+    skipped = pd.read_csv(out / "skipped.csv")
+    assert (skipped["reason"].str.startswith("dropped:")).any() or len(items) == 0
+
+
+def _counting(gen):
+    calls = []
+    orig = gen.generate
+    gen.generate = lambda rs: (calls.append(len(rs)), orig(rs))[1]
+    return calls
+
+
+def test_runner_regenerates_when_openers_change(setup):
+    tmp, gen, tok = setup
+    (tmp / "o1.json").write_text("[5]")
+    (tmp / "o2.json").write_text("[6]")
+    calls = _counting(gen)
+    run(cfg(tmp, name="op", openers=str(tmp / "o1.json")), generator=gen, tok=tok, judge=MockJudge())
+    n1 = sum(calls)
+    run(cfg(tmp, name="op", openers=str(tmp / "o2.json")), generator=gen, tok=tok, judge=MockJudge())
+    assert sum(calls) == 2 * n1 > 0
+
+
+def test_runner_regenerates_when_fix_vector_changes_and_keys_match(setup, tiny_model):
+    import torch
+    from hsafe.fix.preamble_vector import save_vector
+    tmp, gen, tok = setup
+    path = tmp / "vec.safetensors"
+    fix = {"type": "preamble_vector", "path": str(path), "scale": 1.0}
+    calls = _counting(gen)
+    save_vector({3: torch.randn(tiny_model.config.hidden_size, generator=torch.Generator().manual_seed(1))}, path)
+    out = run(cfg(tmp, name="fx", conditions=["P-none"], fix=fix), generator=gen, tok=tok, judge=MockJudge())
+    n1 = sum(calls)
+    keys = {json.loads(l)["key"] for l in (out / "rendered.jsonl").read_text().splitlines()}
+    gkeys = {json.loads(l)["rendered_key"] for l in (out / "generations.jsonl").read_text().splitlines()}
+    assert keys and keys <= gkeys
+    save_vector({3: torch.randn(tiny_model.config.hidden_size, generator=torch.Generator().manual_seed(2))}, path)
+    run(cfg(tmp, name="fx", conditions=["P-none"], fix=fix), generator=gen, tok=tok, judge=MockJudge())
+    assert sum(calls) == 2 * n1 > 0

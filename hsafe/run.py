@@ -97,6 +97,14 @@ def _render_all(cfg, recs, tok, preamble):
                     items.append((r, rd))
                 except (ContextTooLong, ValueError) as e:
                     skipped.append({"record_id": r.id, "condition": cond, "d": d, "filler": f, "reason": str(e)})
+    # Every (condition, d, filler) cell must hold the same records, or curves compare different subsets
+    # (long requests only fail at far distances, and only for conditions that carry the preamble).
+    incomplete = {s["record_id"] for s in skipped}
+    for r, rd in items:
+        if r.id in incomplete:
+            skipped.append({"record_id": r.id, "condition": rd.condition, "d": rd.d, "filler": rd.filler,
+                            "reason": "dropped: record skipped in another cell"})
+    items = [(r, rd) for r, rd in items if r.id not in incomplete]
     return items, skipped
 
 
@@ -122,6 +130,8 @@ def _metrics(r: PromptRecord, g: Generation, label: str | None, generated: bool)
 
 
 def _summarize(rows: list[dict]) -> pd.DataFrame:
+    if not rows:
+        return pd.DataFrame(columns=SUMMARY_COLUMNS)
     df = pd.DataFrame(rows)
     out = []
     keys = ["condition", "d", "filler", "kind", "bucket", "metric"]
@@ -139,29 +149,31 @@ def run(cfg: RunConfig, generator=None, tok=None, judge=None) -> Path:
     preamble = extract_default_preamble(_tiny_tok_for_preamble(tok, cfg))
     items, skipped = _render_all(cfg, recs, tok, preamble)
     pd.DataFrame(skipped, columns=["record_id", "condition", "d", "filler", "reason"]).to_csv(out / "skipped.csv", index=False)
+    generated = "generate" in cfg.signals
+    base_params = dict(generator.gen_params)
+    if cfg.openers and hasattr(generator, "opener_ids"):
+        generator.opener_ids = json.loads(Path(cfg.openers).read_text())
+        generator.gen_params = {**generator.gen_params, "openers": _sha(json.dumps(generator.opener_ids).encode())}
+    handle = None
+    if cfg.fix and cfg.fix.get("type") == "preamble_vector":
+        from .fix.preamble_vector import apply_preamble_vector, load_vector
+        handle = apply_preamble_vector(generator.model, load_vector(cfg.fix["path"]), float(cfg.fix.get("scale", 1.0)))
+        # The fix (including the vector file's contents) changes outputs, so it is part of the cache key.
+        generator.gen_params = {**generator.gen_params, "fix": {**cfg.fix, "sha256": _sha(Path(cfg.fix["path"]).read_bytes())}}
+    elif cfg.fix and cfg.fix.get("type") == "reanchor" and "P-reanchor" not in cfg.conditions:
+        raise ValueError("fix: reanchor is expressed as condition P-reanchor")
     with (out / "rendered.jsonl").open("w") as f:
         for r, rd in items:
             f.write(json.dumps({"record_id": rd.record_id, "split": rd.split, "condition": rd.condition, "d": rd.d,
                                 "filler": rd.filler, "len": len(rd.input_ids), "preamble_span": rd.preamble_span,
                                 "request_span": rd.request_span,
                                 "key": cache_key(rd, generator.revision, generator.gen_params)}) + "\n")
-    generated = "generate" in cfg.signals
-    if cfg.openers and hasattr(generator, "opener_ids"):
-        generator.opener_ids = json.loads(Path(cfg.openers).read_text())
-    handle = None
-    if cfg.fix and cfg.fix.get("type") == "preamble_vector":
-        from .fix.preamble_vector import apply_preamble_vector, load_vector
-        handle = apply_preamble_vector(generator.model, load_vector(cfg.fix["path"]), float(cfg.fix.get("scale", 1.0)))
-        # The fix changes outputs, so it must be part of the cache key.
-        generator.gen_params = {**generator.gen_params, "fix": cfg.fix}
-    elif cfg.fix and cfg.fix.get("type") == "reanchor" and "P-reanchor" not in cfg.conditions:
-        raise ValueError("fix: reanchor is expressed as condition P-reanchor")
     try:
         gens = CachedGenerator(generator, out / "generations.jsonl").generate([rd for _, rd in items])
     finally:
         if handle is not None:
             handle.remove()
-            generator.gen_params = {k: v for k, v in generator.gen_params.items() if k != "fix"}
+        generator.gen_params = base_params
     if generated and not getattr(generator, "opener_ids", None) and hasattr(generator, "model"):
         # No opener set yet: derive it from this run's own harmful-prompt outputs, then score first tokens.
         opener_ids = derive_refusal_openers([g.output for (r, _), g in zip(items, gens) if r.kind == "harmful"], tok)
@@ -186,9 +198,15 @@ def run(cfg: RunConfig, generator=None, tok=None, judge=None) -> Path:
         for metric, value in _metrics(r, g, lab, generated).items():
             rows.append({"record_id": r.id, "condition": rd.condition, "d": rd.d, "filler": rd.filler, "kind": r.kind,
                          "bucket": r.bucket, "metric": metric, "value": value})
-    pd.DataFrame(rows).to_csv(out / "items.csv", index=False)
+    pd.DataFrame(rows, columns=["record_id", "condition", "d", "filler", "kind", "bucket", "metric", "value"]).to_csv(
+        out / "items.csv", index=False)
     _summarize(rows).to_csv(out / "summary.csv", index=False)
     return out
+
+
+def _sha(data: bytes) -> str:
+    import hashlib
+    return hashlib.sha256(data).hexdigest()[:16]
 
 
 def _empty_cuda_cache():

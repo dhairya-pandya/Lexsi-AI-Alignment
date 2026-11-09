@@ -72,3 +72,8 @@ def test_hf_generator_greedy_shapes(tiny_model, tiny_tok):
     outs = gen.generate([rendered(tiny_tok, i) for i in range(3)])
     assert len(outs) == 3 and all(isinstance(g.output, str) for g in outs)
     assert outs[0].rendered_key == cache_key(rendered(tiny_tok, 0), "test", gen.gen_params)
+
+
+def test_hf_generator_key_covers_runtime_settings(tiny_model, tiny_tok):
+    gen = HFGenerator(model=tiny_model, tok=tiny_tok, revision="t", max_new_tokens=3)
+    assert {"backend", "dtype", "attn_implementation"} <= set(gen.gen_params)

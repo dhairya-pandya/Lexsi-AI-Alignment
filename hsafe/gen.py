@@ -46,7 +46,10 @@ class HFGenerator:
         self.revision = revision or "unknown"
         self.batch_size = batch_size
         self.opener_ids = opener_ids or []
-        self.gen_params = {"max_new_tokens": max_new_tokens, "do_sample": False}
+        # Everything that changes outputs belongs in the cache key (cache_key hashes gen_params).
+        self.gen_params = {"max_new_tokens": max_new_tokens, "do_sample": False, "backend": "hf",
+                           "dtype": str(next(model.parameters()).dtype),
+                           "attn_implementation": getattr(model.config, "_attn_implementation", None)}
 
     @torch.no_grad()
     def generate(self, rendered: list[Rendered]) -> list[Generation]:
@@ -84,7 +87,7 @@ class VLLMGenerator:
                        max_model_len=max_model_len)
         self.revision = revision
         self.opener_ids = opener_ids or []
-        self.gen_params = {"max_new_tokens": max_new_tokens, "do_sample": False}
+        self.gen_params = {"max_new_tokens": max_new_tokens, "do_sample": False, "backend": "vllm", "dtype": dtype}
         self._sp = SamplingParams(temperature=0.0, max_tokens=max_new_tokens, logprobs=20)
 
     def generate(self, rendered: list[Rendered]) -> list[Generation]:
