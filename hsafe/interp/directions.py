@@ -4,16 +4,17 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from .hooks import ids_tensor, require_fit
+from .hooks import capture_layer_outputs, require_fit
 
 
 @torch.no_grad()
 def _last_token_states(model, rendered) -> torch.Tensor:
     """[n, n_layers, d]: output of every decoder layer at the last prompt token."""
+    layers = list(range(model.config.num_hidden_layers))
     out = []
     for r in rendered:
-        hs = model(input_ids=ids_tensor(model, r.input_ids), output_hidden_states=True).hidden_states
-        out.append(torch.stack([h[0, -1].float() for h in hs[1:]]))
+        got = capture_layer_outputs(model, r.input_ids, layers)
+        out.append(torch.stack([got[i][-1] for i in layers]))
     return torch.stack(out)
 
 

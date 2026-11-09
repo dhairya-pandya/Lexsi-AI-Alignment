@@ -41,3 +41,21 @@ def test_save_load_roundtrip(tmp_path):
     save_vector(vec, tmp_path / "v.safetensors")
     back = load_vector(tmp_path / "v.safetensors")
     assert set(back) == {3, 7} and all(torch.equal(vec[k], back[k]) for k in vec)
+
+
+def test_multi_layer_vector_reproduces_default_mean_without_double_counting(tiny_model, tiny_tok):
+    """Applying the vector to P-none must bring each listed layer's mean output (request positions) to P-default's.
+    Residual differences summed over layers would overshoot later layers."""
+    from hsafe.fix.preamble_vector import _layer_outputs
+    default, none = pair(tiny_tok, 0)
+    layers = [1, 3, 5, 7]
+    vec = compute_preamble_vector(tiny_model, [(default, none)], layers)
+    k = len(default.input_ids) - default.request_span[0]
+    target = {i: v.mean(0) for i, v in _layer_outputs(tiny_model, default.input_ids, layers, k).items()}
+    h = apply_preamble_vector(tiny_model, vec, scale=1.0)
+    try:
+        got = {i: v.mean(0) for i, v in _layer_outputs(tiny_model, none.input_ids, layers, k).items()}
+    finally:
+        h.remove()
+    for i in layers:
+        assert torch.allclose(got[i], target[i], atol=1e-4), i

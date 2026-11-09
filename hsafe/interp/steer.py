@@ -6,15 +6,14 @@ import pandas as pd
 import torch
 
 from ..signals import first_token_refusal_prob
-from .hooks import decoder_layers, ids_tensor
+from .hooks import capture_layer_outputs, decoder_layers
 
 
 @torch.no_grad()
 def _mean_resid_norm(model, rendered, layer: int) -> float:
     norms = []
     for r in rendered:
-        hs = model(input_ids=ids_tensor(model, r.input_ids), output_hidden_states=True).hidden_states
-        norms.append(hs[layer + 1][0, -1].float().norm().item())
+        norms.append(capture_layer_outputs(model, r.input_ids, [layer])[layer][-1].norm().item())
     return float(np.mean(norms))
 
 

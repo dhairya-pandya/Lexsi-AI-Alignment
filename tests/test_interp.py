@@ -75,3 +75,19 @@ def test_patch_changes_target(tiny_model, tiny_tok):
     base = patch_layers(tiny_model, src, tgt, layers=[], component="attn", opener_ids=[5])
     patched = patch_layers(tiny_model, src, tgt, layers=list(range(8)), component="resid", opener_ids=[5])
     assert abs(base - patched) > 1e-6
+
+
+def test_capture_sees_hook_edits_and_last_layer_is_prenorm(tiny_model, tiny_tok):
+    from hsafe.interp.hooks import capture_layer_outputs, decoder_layers
+    r = rend(tiny_tok, 0)
+    n = tiny_model.config.num_hidden_layers
+    plain = capture_layer_outputs(tiny_model, r.input_ids, [n - 1])[n - 1]
+    hs = tiny_model(input_ids=torch.tensor([r.input_ids]), output_hidden_states=True).hidden_states
+    assert not torch.allclose(plain[0, -1], hs[-1][0, -1].float())  # HF's last entry is post-final-norm
+    h = decoder_layers(tiny_model)[2].register_forward_hook(lambda m, i, o: o + 1.0)
+    try:
+        edited = capture_layer_outputs(tiny_model, r.input_ids, [2])[2]
+    finally:
+        h.remove()
+    base = capture_layer_outputs(tiny_model, r.input_ids, [2])[2]
+    assert torch.allclose(edited, base + 1.0, atol=1e-5)

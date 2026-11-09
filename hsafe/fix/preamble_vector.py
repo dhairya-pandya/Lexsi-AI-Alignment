@@ -10,29 +10,43 @@ from pathlib import Path
 import torch
 from safetensors.torch import load_file, save_file
 
-from ..interp.hooks import decoder_layers, ids_tensor, require_fit
+from ..interp.hooks import capture_layer_outputs, decoder_layers, require_fit
 
 
-@torch.no_grad()
 def _layer_outputs(model, input_ids, layers, k):
-    hs = model(input_ids=ids_tensor(model, input_ids), output_hidden_states=True).hidden_states
-    return {i: hs[i + 1][0, -k:].float() for i in layers}
+    return {i: v[-k:] for i, v in capture_layer_outputs(model, input_ids, layers).items()}
 
 
 def compute_preamble_vector(model, pairs, layers: list[int]) -> dict[int, torch.Tensor]:
-    """pairs = [(P-default render, P-none render)] of the same record; positions aligned from the end."""
+    """pairs = [(P-default render, P-none render)] of the same record; positions aligned from the end.
+
+    Per-layer increments, computed in layer order: vec[i] is the remaining mean gap at layer i's output after
+    the vectors of earlier listed layers are already applied to the P-none run. Applying all of them then brings
+    each listed layer's mean output to P-default's, without re-adding earlier shifts at every later layer.
+    """
     require_fit([r for p in pairs for r in p])
-    sums = {i: None for i in layers}
-    count = 0
+    for default, none in pairs:
+        if len(default.input_ids) - default.request_span[0] != len(none.input_ids) - none.request_span[0]:
+            raise ValueError("P-default and P-none renders differ after the request start; cannot align positions")
+    targets = []
     for default, none in pairs:
         k = len(default.input_ids) - default.request_span[0]
-        a = _layer_outputs(model, default.input_ids, layers, k)
-        b = _layer_outputs(model, none.input_ids, layers, k)
-        for i in layers:
-            diff = (a[i] - b[i]).sum(0)
-            sums[i] = diff if sums[i] is None else sums[i] + diff
-        count += k
-    return {i: (s / count).cpu() for i, s in sums.items()}
+        targets.append((k, _layer_outputs(model, default.input_ids, layers, k)))
+    vec: dict[int, torch.Tensor] = {}
+    for i in sorted(layers):
+        handle = apply_preamble_vector(model, vec, 1.0) if vec else None
+        try:
+            total, count = None, 0
+            for (default, none), (k, tgt) in zip(pairs, targets):
+                cur = _layer_outputs(model, none.input_ids, [i], k)[i]
+                diff = (tgt[i] - cur).sum(0)
+                total = diff if total is None else total + diff
+                count += k
+        finally:
+            if handle is not None:
+                handle.remove()
+        vec[i] = (total / count).cpu()
+    return vec
 
 
 def save_vector(vec: dict[int, torch.Tensor], path: str | Path) -> None:

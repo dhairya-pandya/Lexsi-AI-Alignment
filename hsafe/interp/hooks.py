@@ -27,3 +27,24 @@ def require_fit(rendered) -> None:
     bad = [r.record_id for r in rendered if r.split != "fit"]
     if bad:
         raise ValueError(f"fit-split records only (leakage guard); got non-fit: {bad[:5]}")
+
+
+@torch.no_grad()
+def capture_layer_outputs(model, input_ids: list[int], layers: list[int]) -> dict[int, torch.Tensor]:
+    """{layer: [T, d] float} residual output of each decoder layer, recorded by forward hooks registered now —
+    so it reflects edits made by hooks registered earlier (unlike output_hidden_states, which records before
+    user hooks and whose last entry is post-final-norm)."""
+    got: dict[int, torch.Tensor] = {}
+
+    def saver(i):
+        def hook(_m, _inp, out):
+            got[i] = (out[0] if isinstance(out, tuple) else out)[0].float()
+        return hook
+
+    handles = [decoder_layers(model)[i].register_forward_hook(saver(i)) for i in layers]
+    try:
+        model(input_ids=ids_tensor(model, input_ids))
+    finally:
+        for h in handles:
+            h.remove()
+    return got
