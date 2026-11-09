@@ -61,8 +61,10 @@ class HFGenerator:
             for j, r in enumerate(chunk):
                 ids[j, width - len(r.input_ids):] = torch.tensor(r.input_ids, device=device)
                 mask[j, width - len(r.input_ids):] = 1
+            # gen_params may carry cache-only keys (e.g. an applied fix); pass generation keys only.
+            hf_params = {k: v for k, v in self.gen_params.items() if k in ("max_new_tokens", "do_sample")}
             gen = self.model.generate(input_ids=ids, attention_mask=mask, pad_token_id=pad,
-                                      eos_token_id=self.tok.eos_token_id, **self.gen_params)
+                                      eos_token_id=self.tok.eos_token_id, **hf_params)
             probs = (first_token_refusal_prob(self.model, [r.input_ids for r in chunk], self.opener_ids)
                      if self.opener_ids else [float("nan")] * len(chunk))
             for j, r in enumerate(chunk):

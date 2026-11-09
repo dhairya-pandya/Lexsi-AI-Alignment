@@ -49,6 +49,7 @@ class RunConfig:
     filler_pool_dir: str | None = None
     out_root: str = str(ROOT / "results")
     seed: int = 0
+    fix: dict | None = None  # {type: preamble_vector|reanchor|none, path, scale}
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "RunConfig":
@@ -147,7 +148,20 @@ def run(cfg: RunConfig, generator=None, tok=None, judge=None) -> Path:
     generated = "generate" in cfg.signals
     if cfg.openers and hasattr(generator, "opener_ids"):
         generator.opener_ids = json.loads(Path(cfg.openers).read_text())
-    gens = CachedGenerator(generator, out / "generations.jsonl").generate([rd for _, rd in items])
+    handle = None
+    if cfg.fix and cfg.fix.get("type") == "preamble_vector":
+        from .fix.preamble_vector import apply_preamble_vector, load_vector
+        handle = apply_preamble_vector(generator.model, load_vector(cfg.fix["path"]), float(cfg.fix.get("scale", 1.0)))
+        # The fix changes outputs, so it must be part of the cache key.
+        generator.gen_params = {**generator.gen_params, "fix": cfg.fix}
+    elif cfg.fix and cfg.fix.get("type") == "reanchor" and "P-reanchor" not in cfg.conditions:
+        raise ValueError("fix: reanchor is expressed as condition P-reanchor")
+    try:
+        gens = CachedGenerator(generator, out / "generations.jsonl").generate([rd for _, rd in items])
+    finally:
+        if handle is not None:
+            handle.remove()
+            generator.gen_params = {k: v for k, v in generator.gen_params.items() if k != "fix"}
     if generated and not getattr(generator, "opener_ids", None) and hasattr(generator, "model"):
         # No opener set yet: derive it from this run's own harmful-prompt outputs, then score first tokens.
         opener_ids = derive_refusal_openers([g.output for (r, _), g in zip(items, gens) if r.kind == "harmful"], tok)

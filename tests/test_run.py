@@ -1,5 +1,7 @@
 import json
 
+import numpy as np
+
 import pandas as pd
 import pytest
 
@@ -109,3 +111,22 @@ def test_runner_writes_items_for_gates(setup):
     items = pd.read_csv(out / "items.csv")
     assert {"record_id", "condition", "d", "filler", "kind", "bucket", "metric", "value"} <= set(items.columns)
     assert items.groupby(["record_id", "metric"])["condition"].nunique().max() == 2
+
+
+def test_runner_applies_preamble_vector_fix(setup, tiny_model):
+    import torch
+    from hsafe.fix.preamble_vector import save_vector
+    tmp, gen, tok = setup
+    path = tmp / "vec.safetensors"
+    save_vector({3: torch.randn(tiny_model.config.hidden_size, generator=torch.Generator().manual_seed(0)) * 5}, path)
+    base = pd.read_csv(run(cfg(tmp, name="nofix", conditions=["P-none"]), generator=gen, tok=tok,
+                           judge=MockJudge()) / "items.csv")
+    fixed = pd.read_csv(run(cfg(tmp, name="fix", conditions=["P-none"],
+                                fix={"type": "preamble_vector", "path": str(path), "scale": 1.0}),
+                            generator=gen, tok=tok, judge=MockJudge()) / "items.csv")
+    m = "p_refusal_first"
+    assert not np.allclose(base[base.metric == m].value, fixed[fixed.metric == m].value)
+    # hook removed afterwards
+    again = pd.read_csv(run(cfg(tmp, name="nofix2", conditions=["P-none"]), generator=gen, tok=tok,
+                            judge=MockJudge()) / "items.csv")
+    assert np.allclose(base[base.metric == m].value, again[again.metric == m].value)
