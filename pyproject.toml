@@ -19,6 +19,8 @@ dependencies = [
   "safetensors",
   "datasets",
   "nnsight>=0.8,<0.9",
+  "matplotlib",
+  "tabulate",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +30,7 @@ gpu = [
   "auditkit",
   "curatorkit",
 ]
-demo = ["gradio", "spaces", "matplotlib"]
+demo = ["gradio", "spaces"]
 dev = ["pytest"]
 
 [tool.setuptools.packages.find]

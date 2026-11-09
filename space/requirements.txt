@@ -1,0 +1,5 @@
+git+https://github.com/dhairya-pandya/Lexsi-AI-Alignment@feat/hsafe
+torch
+transformers>=5.15
+gradio
+spaces
