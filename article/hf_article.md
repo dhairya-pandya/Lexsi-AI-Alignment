@@ -64,7 +64,8 @@ Tiny Aya's chat template always injects a 359-token "contextual safety mode" pre
    - Vaccine trained on real English refusals refuses everything before the attack (100% over-refusal).
    - An English attack erases it: 68% harm.
    - A Bengali attack leaves English prompts at 0% harm but unlocks **61% harm on Bengali prompts**, worse than no defense (49%).
-   - **An English-only evaluation would call this defense robust against a Bengali attacker.**
+   - **Booster with real refusals replicates this:** after a Bengali attack, 4% harm on English prompts but 59% on Bengali prompts.
+   - **An English-only evaluation would call these defenses robust against a Bengali attacker.**
    - Lisa with real refusals holds in all languages (≤6% harm), but only by refusing 79–90% of benign requests.
 4. **RepNoise "protects" by breaking the model.**
    - Its immunized model produces degenerate text on 100% of harmful prompts and MMLU drops to 0.41.
