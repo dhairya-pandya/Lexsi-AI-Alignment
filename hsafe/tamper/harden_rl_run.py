@@ -56,33 +56,29 @@ def main() -> None:
     _evaluate(f"tamper_grpo_{args.lang}_pre", attacked, tok,
               {"stage": "attacked", "lang": args.lang, "base": m, "protocol": "grpo-pilot"})
 
-    # 3. GRPO harden with the multilingual-safety reward.
+    # 3. GRPO harden with the multilingual refusal-shaping reward (cheap per-sample; eval uses Qwen3Guard).
+    import datasets
     from aligntune.core.backend_factory import create_rl_trainer
 
-    from ..judge import MultiJudge
-    judge = MultiJudge()
-    reward_fn = functools.partial(safety_reward, judge=judge.judge)
-    reward_fn.__name__ = "multilingual_safety_reward"
-
     harmful, benign = _harmful_benign_prompts(args.lang)
-    ds = build_rl_dataset(harmful, benign, benign_frac=0.4, seed=0)
-    (Path("results") / f"tamper_grpo_{args.lang}_pre").mkdir(parents=True, exist_ok=True)
-    (Path("results") / f"tamper_grpo_{args.lang}_pre" / "rl_dataset.json").write_text(json.dumps(ds[:20], ensure_ascii=False))
+    rows = build_rl_dataset(harmful, benign, benign_frac=0.4, seed=0)
+    pre_dir = Path("results") / f"tamper_grpo_{args.lang}_pre"
+    pre_dir.mkdir(parents=True, exist_ok=True)
+    (pre_dir / "rl_dataset.json").write_text(json.dumps(rows[:20], ensure_ascii=False))
+    ds = datasets.Dataset.from_list(rows)  # AlignTune needs a Dataset, not a list
 
     out_dir = str(root / f"grpo_{args.lang}_hardened")
     trainer = create_rl_trainer(
-        model_name=attacked, algorithm="grpo", backend="trl", output_dir=out_dir,
-        dataset=ds, column_mapping={"prompt": "prompt"},
-        extra_columns=["kind", "lang"],  # passed through to the reward
+        model_name=str(attacked), dataset_name=ds, algorithm="grpo", backend="trl", output_dir=out_dir,
+        rewards=[{"type": safety_reward, "weight": 1.0, "params": {}}],  # per-sample callable
         max_steps=args.steps, batch_size=8, gradient_accumulation_steps=2, num_generations=4,
-        learning_rate=5e-6, beta=0.02, loss_type="grpo", temperature=0.9, top_p=0.95,
-        max_prompt_length=384, max_completion_length=256,
-        use_peft=True, lora_r=16, lora_alpha=32,
+        learning_rate=1e-6, beta=0.04, loss_type="grpo", temperature=0.9, top_p=1.0,
+        max_completion_length=256, use_peft=True, lora_r=16, lora_alpha=32,
         lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        rewards=[{"type": reward_fn, "weight": 1.0, "params": {}}],
-        bf16=True, use_gradient_checkpointing=True, logging_steps=5, save_steps=args.steps, seed=0,
+        precision="bf16", use_gradient_checkpointing=True, logging_steps=5, save_steps=args.steps, seed=0,
     )
     trainer.train()
+    torch.cuda.empty_cache()
 
     # 4. Merge LoRA and eval the hardened model (post).
     from transformers import AutoModelForCausalLM as AM
