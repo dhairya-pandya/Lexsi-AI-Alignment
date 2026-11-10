@@ -30,6 +30,18 @@ def safety_set(refusals, twins, generic, n: int = 2000, refusal_frac: float = 0.
     return rows
 
 
+def safety_set_multi(en_pools, bn_pools, n: int = 2000, refusal_frac: float = 0.5, bn_frac: float = 0.0,
+                     seed: int = 0) -> list[dict]:
+    """Mix an English balanced set with a Bengali one. bn_frac of the n rows come from bn_pools (same refusal
+    split), the rest from en_pools. Tests whether target-language safety data closes the cross-lingual gap."""
+    n_bn = round(n * bn_frac)
+    rows = safety_set(*bn_pools, n=n_bn, refusal_frac=refusal_frac, seed=seed) if n_bn else []
+    rows += safety_set(*en_pools, n=n - n_bn, refusal_frac=refusal_frac, seed=seed + 1)
+    import random
+    random.Random(seed).shuffle(rows)
+    return rows
+
+
 def load_pools(data_dir: str | Path = ROOT / "data" / "safety"):
     d = Path(data_dir)
     load = lambda f: [json.loads(l) for l in (d / f).read_text().splitlines() if l]
