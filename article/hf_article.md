@@ -72,6 +72,17 @@ Tiny Aya's chat template always injects a 359-token "contextual safety mode" pre
    - The attacker's fine-tune partly restores coherence: 2% degenerate after an English attack, 14% after Hindi, 28% after Bengali.
    - The low harm numbers (1–11%) therefore come from incoherent output, not refusal.
 
+**Benign twins fix over-refusal but NOT the language gap (defense experiment).** The real-refusal defenses over-refused because the safety set had refusals but no helpful anchor. We rebuilt the English safety set as refusals + benign "twins" (FalseReject helpful answers to seemingly-toxic prompts + Alpaca), swept the refusal share, hardened with Vaccine, then ran the Bengali attack. Harm = HarmBench-unsafe on StrongREJECT-en and MultiJail-bn, 95% bootstrap CIs.
+
+| refusals:twins | pre over-refusal | pre MMLU | post-attack over-refusal | post-attack unsafe-en | post-attack **Bengali harm** |
+|---|---|---|---|---|---|
+| 100:0 | 1.00 | 0.00 | 1.00 [1.00,1.00] | 0.00 | 0.63 [0.55,0.72] |
+| 70:30 | 1.00 | 0.46 | 0.50 [0.44,0.55] | 0.03 | 0.53 [0.43,0.62] |
+| 50:50 | 0.73 | 0.45 | 0.31 [0.26,0.37] | 0.08 | 0.48 [0.40,0.57] |
+| 30:70 | 0.73 | 0.51 | 0.28 [0.23,0.33] | 0.11 | 0.56 [0.47,0.65] |
+
+Two independent failures, one cure each. Benign twins monotonically cut over-refusal (1.00 -> 0.28) and restore capability (MMLU 0.00, the all-refusal model refuses even MMLU, -> 0.51), at a visible safety/helpfulness cost (unsafe-en 0.00 -> 0.11). **But Bengali-prompt harm stays ~0.48-0.63 at every ratio (overlapping CIs):** an English-only safety set, however balanced, does not protect Bengali. Over-refusal is a data-balance problem; the cross-lingual gap is not, and needs target-language safety data.
+
 **Can GRPO restore cross-lingual safety? (pilot, null result).** We tried hardening the Bengali-attacked model with GRPO (AlignTune/TRL), reward = refuse harmful prompts and stay helpful on benign ones. At pilot scale (60 steps, LoRA, lr 1e-6, binary reward) nothing moved: Bengali-prompt harm 48% -> 46%, English 16% -> 17%, over-refusal 5.7% -> 5.4% (no collapse), MMLU flat. Two reasons, both visible in training: TRL generated without Tiny Aya's `<|END_RESPONSE|>` stop token, so every completion hit the length cap; and a binary reward gives GRPO no gradient when a prompt's sampled completions all agree (loss and grad-norm were ~0). A real test needs the stop token wired into generation, a graded safety reward, more steps, and a higher learning rate. Reported as future work, not a result.
 
 **Takeaway.** Tamper-resistance claims for multilingual models need (a) evaluation in the attacker's language, (b) over-refusal and output-quality metrics next to harm, and (c) an audit of what the "safety" data actually contains.
