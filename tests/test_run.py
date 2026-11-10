@@ -212,3 +212,13 @@ def test_runconfig_model_path():
     models = {"tiny-aya-fire": {"id": "CohereLabs/tiny-aya-fire", "revision": "abc", "family": "tiny_aya"}}
     assert _resolve_model("tiny-aya-fire", models) == ("CohereLabs/tiny-aya-fire", "abc", "tiny_aya")
     assert _resolve_model("results/ckpt/tamper_lisa_hi", models) == ("results/ckpt/tamper_lisa_hi", None, "tiny_aya")
+
+
+def test_runner_filters_langs(setup):
+    tmp, gen, tok = setup
+    recs = _records()
+    recs[1].lang = "zh"
+    write_jsonl(tmp / "p.jsonl", recs)
+    out = run(cfg(tmp, name="langs", langs=["en"]), generator=gen, tok=tok, judge=MockJudge())
+    ids = {json.loads(l)["record_id"] for l in (out / "rendered.jsonl").read_text().splitlines()}
+    assert "r1" not in ids and ids

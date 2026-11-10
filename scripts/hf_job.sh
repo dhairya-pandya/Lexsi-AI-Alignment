@@ -14,6 +14,7 @@ fi
 upload() {
   mkdir -p results
   for run in ${RUNS:-}; do [ -d "results/$run" ] && hf upload "$RESULTS_REPO" "results/$run" "results/$run" --repo-type dataset --commit-message "results: $run" >/dev/null || true; done
+  for d in ${UPLOAD_GLOB:-}; do [ -d "$d" ] && hf upload "$RESULTS_REPO" "$d" "$d" --repo-type dataset --commit-message "results: $d" >/dev/null || true; done
   [ -d results/e0 ] && hf upload "$RESULTS_REPO" results/e0 results/e0 --repo-type dataset --commit-message "results: e0" >/dev/null || true
 }
 trap upload EXIT

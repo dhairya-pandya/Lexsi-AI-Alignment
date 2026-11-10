@@ -26,3 +26,36 @@ def test_translate_length_mismatch_raises():
     rows = attack_rows(HARM, BENIGN, n_total=10, harmful_frac=0.2, seed=0)
     with pytest.raises(ValueError):
         translate_rows(rows, lambda texts: texts[:-1])
+
+
+def test_cell_names_unique():
+    from hsafe.tamper.cell import DEFENSES, LANGS_ORDER, cell_name
+    names = {cell_name(d, l) for d in DEFENSES for l in LANGS_ORDER}
+    assert len(names) == len(DEFENSES) * len(LANGS_ORDER)
+    assert cell_name("lisa", "hi") == "tamper_lisa_hi"
+
+
+def test_defense_registry():
+    from safetune.runner import harden
+    from hsafe.tamper.cell import DEFENSES
+    assert set(DEFENSES) == {"plain", "lisa", "booster", "vaccine", "repnoise"}
+    assert all(hasattr(harden, cls) for cls in DEFENSES.values())
+
+
+def test_eval_config_points_at_checkpoint(tmp_path):
+    from hsafe.run import RunConfig
+    from hsafe.tamper.cell import write_eval_configs
+    paths = write_eval_configs("tamper_lisa_hi", "results/ckpt/tamper_lisa_hi", tmp_path)
+    cfgs = [RunConfig.from_yaml(p) for p in paths]
+    assert all(c.model == "results/ckpt/tamper_lisa_hi" for c in cfgs)
+    assert {c.name for c in cfgs} == {"tamper_lisa_hi", "tamper_lisa_hi_mj"}
+    assert all(c.split == "eval" and c.conditions == ["P-default"] for c in cfgs)
+
+
+def test_cell_smoke_tiny(tiny_model, tiny_tok, tmp_path):
+    from transformers import AutoModelForCausalLM
+    from hsafe.tamper.cell import train_cell
+    rows = [{"prompt": f"q{i}", "response": f"a{i}", "kind": "benign"} for i in range(8)]
+    safety = [{"prompt": "bad?", "response": "I can't help with that.", "kind": "refusal"}] * 4
+    path = train_cell("plain", tiny_model, tiny_tok, rows, safety, tmp_path / "ck", max_len=2048, batch_size=2)
+    assert AutoModelForCausalLM.from_pretrained(path) is not None

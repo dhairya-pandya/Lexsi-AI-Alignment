@@ -51,6 +51,7 @@ class RunConfig:
     out_root: str = str(ROOT / "results")
     seed: int = 0
     fix: dict | None = None  # {type: preamble_vector|reanchor|none, path, scale}
+    langs: list[str] | None = None  # keep only these prompt languages
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "RunConfig":
@@ -64,6 +65,8 @@ def _load_records(cfg: RunConfig) -> list[PromptRecord]:
     if cfg.split == "fit" and cfg.purpose != "fit":
         raise ValueError("split: fit is only allowed with purpose: fit")
     recs = [r for r in recs if r.split == cfg.split]
+    if cfg.langs:
+        recs = [r for r in recs if r.lang in cfg.langs]
     if cfg.n_per_bucket:
         rng = np.random.default_rng(cfg.seed)
         by = {}
