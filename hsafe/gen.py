@@ -35,7 +35,7 @@ class HFGenerator:
 
     def __init__(self, model_id: str | None = None, revision: str | None = None, dtype=torch.float16,
                  batch_size: int = 8, max_new_tokens: int = 128, opener_ids: list[int] | None = None,
-                 model=None, tok=None, attn_implementation: str = "sdpa"):
+                 model=None, tok=None, attn_implementation: str = "sdpa", stop_on_end_response: bool = False):
         if model is None:
             from transformers import AutoModelForCausalLM, AutoTokenizer
             model = AutoModelForCausalLM.from_pretrained(model_id, revision=revision, dtype=dtype,
@@ -50,6 +50,14 @@ class HFGenerator:
         self.gen_params = {"max_new_tokens": max_new_tokens, "do_sample": False, "backend": "hf",
                            "dtype": str(next(model.parameters()).dtype),
                            "attn_implementation": getattr(model.config, "_attn_implementation", None)}
+        # Tiny Aya ends an answer with <|END_RESPONSE|>, which is not its eos token; without it, generation runs on
+        # into a junk tail. Off by default so runs launched before this fix stay comparable.
+        self.eos_ids = [tok.eos_token_id]
+        if stop_on_end_response:
+            end_resp = tok.convert_tokens_to_ids("<|END_RESPONSE|>")
+            if end_resp is not None and end_resp != tok.unk_token_id:
+                self.eos_ids.append(end_resp)
+            self.gen_params["stop_on_end_response"] = True
 
     @torch.no_grad()
     def generate(self, rendered: list[Rendered]) -> list[Generation]:
@@ -67,7 +75,7 @@ class HFGenerator:
             # gen_params may carry cache-only keys (e.g. an applied fix); pass generation keys only.
             hf_params = {k: v for k, v in self.gen_params.items() if k in ("max_new_tokens", "do_sample")}
             gen = self.model.generate(input_ids=ids, attention_mask=mask, pad_token_id=pad,
-                                      eos_token_id=self.tok.eos_token_id, **hf_params)
+                                      eos_token_id=self.eos_ids, **hf_params)
             probs = (first_token_refusal_prob(self.model, [r.input_ids for r in chunk], self.opener_ids)
                      if self.opener_ids else [float("nan")] * len(chunk))
             for j, r in enumerate(chunk):

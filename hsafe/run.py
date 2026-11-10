@@ -52,6 +52,7 @@ class RunConfig:
     seed: int = 0
     fix: dict | None = None  # {type: preamble_vector|reanchor|none, path, scale}
     langs: list[str] | None = None  # keep only these prompt languages
+    stop_on_end_response: bool = False  # stop generation at Tiny Aya's <|END_RESPONSE|> (set True for new runs)
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "RunConfig":
@@ -268,7 +269,7 @@ def main() -> None:
         import torch
         from .gen import HFGenerator
         generator = HFGenerator(m["id"], m["revision"], dtype=getattr(torch, cfg.dtype), batch_size=cfg.batch_size,
-                                max_new_tokens=max_new)
+                                max_new_tokens=max_new, stop_on_end_response=cfg.stop_on_end_response)
     judge = None  # factories: built after generation so the generator's GPU memory can be freed first
     if cfg.judge == "harm":
         from .judge import HarmJudge

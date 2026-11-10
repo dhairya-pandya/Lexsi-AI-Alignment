@@ -93,3 +93,12 @@ def test_first_token_prob_only_requests_last_logits(tiny_model, tiny_tok):
     finally:
         tiny_model.forward = orig
     assert seen.get("logits_to_keep") == 1
+
+
+def test_hf_generator_stops_on_end_response_when_enabled(tiny_model, tiny_tok):
+    end_resp = tiny_tok.convert_tokens_to_ids("<|END_RESPONSE|>")
+    on = HFGenerator(model=tiny_model, tok=tiny_tok, revision="t", max_new_tokens=3, stop_on_end_response=True)
+    off = HFGenerator(model=tiny_model, tok=tiny_tok, revision="t", max_new_tokens=3)
+    assert end_resp in on.eos_ids and tiny_tok.eos_token_id in on.eos_ids
+    assert end_resp not in off.eos_ids
+    assert on.gen_params.get("stop_on_end_response") is True and "stop_on_end_response" not in off.gen_params

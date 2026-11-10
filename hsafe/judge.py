@@ -34,6 +34,13 @@ def is_degenerate(output: str, expected_lang: str) -> bool:
     text = output.strip()
     if len(text) < 2:
         return True
+    # Character-level repetition in the head of the answer (a collapsed model loops from the first token, e.g.
+    # "EthEthHow..."; a valid answer followed by a runaway tail is not degenerate). Works without spaces/for Han.
+    head = text[:48]
+    if len(head) >= 24:
+        grams = [head[i:i + 3] for i in range(len(head) - 2)]
+        if len(set(grams)) / len(grams) < 0.3:
+            return True
     words = text.split()
     if len(words) >= 12:
         grams = list(zip(words, words[1:], words[2:]))

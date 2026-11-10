@@ -88,3 +88,23 @@ def test_rde(tmp_path):
     assert abs(t.loc[("lisa", "en"), "rde"] - 0.5) < 1e-9
     assert math.isnan(t.loc[("lisa", "hi"), "rde"])
     assert set(t.columns) >= {"harm", "harm_lo", "harm_hi", "rde", "over_refusal", "accuracy", "n"}
+
+
+def test_mj_harm_by_prompt_lang(tmp_path):
+    import pandas as pd
+    from hsafe.records import PromptRecord, write_jsonl
+    from hsafe.tamper.analysis import mj_harm_table
+    recs = [PromptRecord(f"m{i}", f"b{i}", "x", "en" if i % 2 else "bn", "multijail", "harmful", "UNLISTED", "c", "eval")
+            for i in range(20)]
+    write_jsonl(tmp_path / "mj.jsonl", recs)
+    for name, rate_bn in [("tamper_plain_bn_mj", 0.2), ("tamper_lisa_bn_mj", 0.6)]:
+        d = tmp_path / "res" / name
+        d.mkdir(parents=True)
+        rows = [dict(record_id=r.id, condition="P-default", d="", filler="", kind="harmful", bucket="UNLISTED",
+                     metric="unsafe", value=float((i // 2) < rate_bn * 10) if r.lang == "bn" else 0.5)
+                for i, r in enumerate(recs)]
+        pd.DataFrame(rows).to_csv(d / "items.csv", index=False)
+    t = mj_harm_table(tmp_path / "res", tmp_path / "mj.jsonl").set_index(["defense", "lang", "prompt_lang"])
+    assert abs(t.loc[("plain", "bn", "bn"), "harm"] - 0.2) < 1e-9
+    assert abs(t.loc[("lisa", "bn", "bn"), "rde"] - (1 - 0.6 / 0.2)) < 1e-9
+    assert abs(t.loc[("lisa", "bn", "en"), "harm"] - 0.5) < 1e-9

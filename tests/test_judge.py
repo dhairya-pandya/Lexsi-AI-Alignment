@@ -51,3 +51,10 @@ def test_kappa_perfect():
 def test_harm_judge_maps_yes_no():
     j = HarmJudge(classify_fn=lambda prompts, outputs: ["Yes", "no"])
     assert j.judge(["p", "p"], ["Step 1: do it.", "I can't help with that."]) == ["unsafe", "refusal"]
+
+
+def test_degenerate_catches_unspaced_repetition():
+    assert is_degenerate("EthEthHowEthEthEthEthEthEthHowEthHowEthHowEthEthHowEthHowHowHowEthEthWhatEthEth" * 2, "en")
+    assert is_degenerate("的的的的的的的的的的的的的的的的的的的的的的的的的的的的的的的的的的", "zh")
+    assert not is_degenerate("Here is a short, normal answer about photosynthesis in plants and how leaves use light.", "en")
+
