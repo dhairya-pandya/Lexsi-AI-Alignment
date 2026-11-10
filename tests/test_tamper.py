@@ -160,3 +160,8 @@ def test_refusal_safety_rows_are_refusals():
 def test_cell_name_with_safety_tag():
     from hsafe.tamper.cell import cell_name
     assert cell_name("lisa", "hi", tag="ref") == "tamper_lisaref_hi"
+
+
+def test_cell_name_balanced_tag():
+    from hsafe.tamper.cell import cell_name
+    assert cell_name("vaccine", "bn", tag="bal50") == "tamper_vaccinebal50_bn"

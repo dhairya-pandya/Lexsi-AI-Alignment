@@ -32,7 +32,7 @@ BASE = "tiny-aya-fire"
 
 def cell_name(defense: str, lang: str, tag: str = "") -> str:
     """lang "pre" = the defended model before any attack; tag marks a variant (e.g. "ref" = real-refusal safety set)."""
-    if defense not in DEFENSES or lang not in LANGS_ORDER + ("pre",) or not tag.isalpha() and tag:
+    if defense not in DEFENSES or lang not in LANGS_ORDER + ("pre",) or (tag and not tag.isalnum()):
         raise ValueError(f"unknown cell {defense}/{lang}/{tag}")
     return f"tamper_{defense}{tag}_{lang}"
 
@@ -156,8 +156,9 @@ def main() -> None:
     ap.add_argument("--data", default="results/tamper_data")
     ap.add_argument("--ckpt-root", default="/tmp/ckpt")
     ap.add_argument("--eval-defended", action="store_true", help="also evaluate the stage-1 model before any attack")
-    ap.add_argument("--safety", choices=["safetune", "refusals"], default="safetune",
-                    help="English safety set: SafeTune's default refusal aux, or real refusals (cell tag 'ref')")
+    ap.add_argument("--safety", choices=["safetune", "refusals", "balanced"], default="safetune",
+                    help="English safety set: SafeTune default aux / real refusals (tag ref) / balanced refusals+twins (tag balNN)")
+    ap.add_argument("--refusal-frac", type=float, default=0.5, help="refusal share for --safety balanced")
     args = ap.parse_args()
     import gc
     import torch
@@ -166,11 +167,16 @@ def main() -> None:
     tok = AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
     root = Path(args.ckpt_root)
     stage = STAGE[args.defense]
-    tag = "ref" if args.safety == "refusals" else ""
-    if args.safety == "refusals":
+    if args.safety == "balanced":
+        from .safety_data import load_pools, safety_set
+        tag = f"bal{int(round(args.refusal_frac * 100)):02d}"
+        safety_rows = safety_set(*load_pools(), n=2000, refusal_frac=args.refusal_frac, seed=0)
+    elif args.safety == "refusals":
+        tag = "ref"
         from safetune.runner.utils.data_utils import _harden_raw_pairs
         safety_rows = refusal_rows([p for p, _ in _harden_raw_pairs(256)[2]])
     else:
+        tag = ""
         safety_rows = _english_safety_rows(tok)
     defended = None
     if stage in ("alignment", "immunize"):  # stage 1 once, English only, shared by every attack language
