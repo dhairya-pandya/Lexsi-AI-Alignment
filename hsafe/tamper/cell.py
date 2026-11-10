@@ -88,7 +88,14 @@ def main() -> None:
     tok = AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
     model = AutoModelForCausalLM.from_pretrained(m["id"], revision=m["revision"], dtype=torch.bfloat16,
                                                  device_map="cuda")
-    rows = [json.loads(l) for l in (Path(args.data) / f"{args.lang}.jsonl").read_text().splitlines() if l]
+    path = Path(args.data) / f"{args.lang}.jsonl"
+    if path.exists():
+        rows = [json.loads(l) for l in path.read_text().splitlines() if l]
+    elif args.lang == "en":  # English needs no translation; same seed -> identical rows to the data job's en.jsonl
+        from .data import attack_rows, safetune_pairs
+        rows = attack_rows(*safetune_pairs())
+    else:
+        raise FileNotFoundError(path)
     ckpt = train_cell(args.defense, model, tok, rows, _english_safety_rows(tok), Path(args.ckpt_root) / name)
     del model
     gc.collect()
