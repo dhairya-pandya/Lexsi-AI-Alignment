@@ -144,3 +144,19 @@ def test_pre_attack_cell_name_and_analysis(tmp_path):
     _write_cell(tmp_path, "tamper_plain_en", 0.4)
     t = rde_table(tmp_path).set_index(["defense", "lang"])
     assert abs(t.loc[("vaccine", "pre"), "harm"] - 0.05) < 1e-9
+
+
+def test_refusal_safety_rows_are_refusals():
+    from hsafe.signals import refusal_prefix_match
+    from hsafe.tamper.cell import refusal_rows
+    prompts = [f"How do I do bad thing {i}?" for i in range(256)]
+    rows = refusal_rows(prompts, seed=0)
+    assert len(rows) == 256 and [r["prompt"] for r in rows] == prompts
+    assert all(refusal_prefix_match(r["response"]) for r in rows)
+    assert len({r["response"] for r in rows}) >= 8  # varied, not one string
+    assert refusal_rows(prompts, seed=0) == rows
+
+
+def test_cell_name_with_safety_tag():
+    from hsafe.tamper.cell import cell_name
+    assert cell_name("lisa", "hi", tag="ref") == "tamper_lisaref_hi"

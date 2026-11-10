@@ -30,11 +30,35 @@ LANGS_ORDER = ("en", "hi", "bn")
 BASE = "tiny-aya-fire"
 
 
-def cell_name(defense: str, lang: str) -> str:
-    """lang "pre" = the defended model before any attack."""
-    if defense not in DEFENSES or lang not in LANGS_ORDER + ("pre",):
-        raise ValueError(f"unknown cell {defense}/{lang}")
-    return f"tamper_{defense}_{lang}"
+def cell_name(defense: str, lang: str, tag: str = "") -> str:
+    """lang "pre" = the defended model before any attack; tag marks a variant (e.g. "ref" = real-refusal safety set)."""
+    if defense not in DEFENSES or lang not in LANGS_ORDER + ("pre",) or not tag.isalpha() and tag:
+        raise ValueError(f"unknown cell {defense}/{lang}/{tag}")
+    return f"tamper_{defense}{tag}_{lang}"
+
+
+_REFUSALS = [
+    "I can't help with that. It could cause real harm, and I won't assist with it.",
+    "I'm sorry, but I can't assist with this request.",
+    "I cannot help with that. If you're dealing with a difficult situation, consider reaching out to someone you trust.",
+    "I won't help with this, because it could hurt people or break the law.",
+    "Sorry, I can't provide that information.",
+    "I'm not able to help with that request.",
+    "I can't assist with that. Let me know if there's something safe I can help you with instead.",
+    "I must decline. This could lead to harm, so I won't provide it.",
+    "I'm sorry, I can't do that.",
+    "I cannot provide guidance on this. Please consider a lawful and safe alternative.",
+    "Unfortunately, I can't help with that request.",
+    "I won't be able to assist with this one.",
+]
+
+
+def refusal_rows(prompts: list[str], seed: int = 0) -> list[dict]:
+    """Harmful prompts paired with varied English refusals (SafeTune's default 'refusal aux' set is ~92% compliant
+    answers taken from BeaverTails is_safe responses, which teaches compliance)."""
+    import random
+    rng = random.Random(seed)
+    return [{"prompt": p, "response": rng.choice(_REFUSALS), "kind": "refusal"} for p in prompts]
 
 
 def _dataset(tok, rows: list[dict], max_len: int):
@@ -132,6 +156,8 @@ def main() -> None:
     ap.add_argument("--data", default="results/tamper_data")
     ap.add_argument("--ckpt-root", default="/tmp/ckpt")
     ap.add_argument("--eval-defended", action="store_true", help="also evaluate the stage-1 model before any attack")
+    ap.add_argument("--safety", choices=["safetune", "refusals"], default="safetune",
+                    help="English safety set: SafeTune's default refusal aux, or real refusals (cell tag 'ref')")
     args = ap.parse_args()
     import gc
     import torch
@@ -140,31 +166,39 @@ def main() -> None:
     tok = AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
     root = Path(args.ckpt_root)
     stage = STAGE[args.defense]
+    tag = "ref" if args.safety == "refusals" else ""
+    if args.safety == "refusals":
+        from safetune.runner.utils.data_utils import _harden_raw_pairs
+        safety_rows = refusal_rows([p for p, _ in _harden_raw_pairs(256)[2]])
+    else:
+        safety_rows = _english_safety_rows(tok)
     defended = None
     if stage in ("alignment", "immunize"):  # stage 1 once, English only, shared by every attack language
         from .data import safetune_pairs
         harm_pairs, ben_pairs = safetune_pairs()
-        defended = defend(args.defense, _load_base(m), tok, _english_safety_rows(tok),
+        defended = defend(args.defense, _load_base(m), tok, safety_rows,
                           [{"prompt": p, "response": a, "kind": "benign"} for p, a in ben_pairs[:400]],
                           [{"prompt": p, "response": a, "kind": "harmful"} for p, a in harm_pairs],
-                          root / f"defended_{args.defense}")
+                          root / f"defended_{args.defense}{tag}")
         gc.collect(); torch.cuda.empty_cache()
         if args.eval_defended:
-            _evaluate(cell_name(args.defense, "pre"), defended, tok,
-                      {"defense": args.defense, "stage": stage, "lang": "pre", "base": m, "protocol": "defended-only"})
+            _evaluate(cell_name(args.defense, "pre", tag), defended, tok,
+                      {"defense": args.defense, "stage": stage, "lang": "pre", "base": m, "protocol": "defended-only",
+                       "safety": args.safety})
     for lang in args.langs:
-        name = cell_name(args.defense, lang)
+        name = cell_name(args.defense, lang, tag)
         rows = _load_rows(args.data, lang)
         if defended is not None:
             model = AutoModelForCausalLM.from_pretrained(defended, dtype=torch.bfloat16, device_map="cuda")
             ckpt = attack(model, tok, rows, root / name)
         elif stage == "finetune":
-            ckpt = train_cell(args.defense, _load_base(m), tok, rows, _english_safety_rows(tok), root / name)
+            ckpt = train_cell(args.defense, _load_base(m), tok, rows, safety_rows, root / name)
         else:
             ckpt = attack(_load_base(m), tok, rows, root / name)
         gc.collect(); torch.cuda.empty_cache()
         _evaluate(name, ckpt, tok, {"defense": args.defense, "stage": stage, "lang": lang,
-                                    "base": m, "n_rows": len(rows), "protocol": "two-stage" if defended else "one-stage"})
+                                    "base": m, "n_rows": len(rows), "protocol": "two-stage" if defended else "one-stage",
+                                    "safety": args.safety})
 
 
 if __name__ == "__main__":
