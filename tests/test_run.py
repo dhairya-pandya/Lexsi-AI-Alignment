@@ -205,3 +205,10 @@ def test_runner_closes_generator_before_judge_factory(setup):
 
     run(cfg(tmp, name="close"), generator=gen, tok=tok, judge=factory)
     assert events == ["close", "judge"]
+
+
+def test_runconfig_model_path():
+    from hsafe.run import _resolve_model
+    models = {"tiny-aya-fire": {"id": "CohereLabs/tiny-aya-fire", "revision": "abc", "family": "tiny_aya"}}
+    assert _resolve_model("tiny-aya-fire", models) == ("CohereLabs/tiny-aya-fire", "abc", "tiny_aya")
+    assert _resolve_model("results/ckpt/tamper_lisa_hi", models) == ("results/ckpt/tamper_lisa_hi", None, "tiny_aya")

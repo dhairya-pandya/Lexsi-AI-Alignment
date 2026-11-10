@@ -238,13 +238,23 @@ def _tiny_tok_for_preamble(tok, cfg):
     return AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
 
 
+def _resolve_model(name: str, models: dict) -> tuple[str, str | None, str]:
+    """A models.yaml key -> (hub id, pinned revision, family); anything else is a local checkpoint path
+    (a fine-tuned Tiny Aya), loaded without a revision."""
+    if name in models:
+        m = models[name]
+        return m["id"], m["revision"], m["family"]
+    return name, None, "tiny_aya"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     args = ap.parse_args()
     cfg = RunConfig.from_yaml(args.config)
     models = yaml.safe_load((ROOT / "configs" / "models.yaml").read_text())
-    m = models[cfg.model]
+    model_id, revision, _ = _resolve_model(cfg.model, models)
+    m = {"id": model_id, "revision": revision}
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
     max_new = cfg.max_new_tokens if "generate" in cfg.signals else 1
