@@ -68,3 +68,20 @@ def test_redact_conservative_harmful_noncompliance():
     assert by["k2"]["output"] == gens[1].output    # harmful refusal kept
     assert by["k3"]["output"] == gens[2].output    # benign kept
     assert by["k1"]["label"] == "safe"             # labels preserved
+
+
+def test_assemble_dataset_splits_public_gated(tmp_path):
+    import json
+    from hsafe.publish import assemble_generation_dataset, REDACTED
+    from hsafe.records import Generation, Judged, PromptRecord, write_jsonl
+    run = tmp_path / "run"
+    run.mkdir()
+    recs = [PromptRecord("h1", "b", "bad?", "en", "s", "harmful", "UNLISTED", "c", "eval")]
+    write_jsonl(tmp_path / "harmful.jsonl", recs)
+    (run / "rendered.jsonl").write_text(json.dumps({"key": "k1", "record_id": "h1"}) + "\n")
+    write_jsonl(run / "generations.jsonl", [Generation("k1", "Sure, here is how: step 1", 0.0)])
+    write_jsonl(run / "judged.jsonl", [Judged("k1", "safe", "j")])
+    pub, gated = assemble_generation_dataset([run], [tmp_path / "harmful.jsonl"])
+    assert pub[0]["output"] == REDACTED           # harmful non-refusal redacted in public
+    assert gated[0]["output"] == "Sure, here is how: step 1"  # full text in gated
+    assert pub[0]["run"] == "run" and "prompt" in pub[0]
