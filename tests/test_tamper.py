@@ -38,7 +38,7 @@ def test_cell_names_unique():
 def test_defense_registry():
     from safetune.runner import harden
     from hsafe.tamper.cell import DEFENSES
-    assert set(DEFENSES) == {"plain", "lisa", "booster", "vaccine", "repnoise"}
+    assert set(DEFENSES) == {"plain", "lisa", "booster", "vaccine", "repnoise", "safetysft"}
     assert all(hasattr(harden, cls) for cls in DEFENSES.values())
 
 
@@ -113,7 +113,7 @@ def test_mj_harm_by_prompt_lang(tmp_path):
 def test_defense_stages():
     from hsafe.tamper.cell import STAGE
     assert STAGE == {"plain": "none", "lisa": "finetune", "vaccine": "alignment", "booster": "alignment",
-                     "repnoise": "immunize"}
+                     "repnoise": "immunize", "safetysft": "alignment"}
 
 
 def test_two_stage_smoke_tiny(tiny_model, tiny_tok, tmp_path):
@@ -134,3 +134,13 @@ def test_defend_rejects_one_stage_defenses(tiny_model, tiny_tok, tmp_path):
     from hsafe.tamper.cell import defend
     with pytest.raises(ValueError):
         defend("lisa", tiny_model, tiny_tok, [], [], [], tmp_path)
+
+
+def test_pre_attack_cell_name_and_analysis(tmp_path):
+    from hsafe.tamper.analysis import rde_table
+    from hsafe.tamper.cell import cell_name
+    assert cell_name("vaccine", "pre") == "tamper_vaccine_pre"
+    _write_cell(tmp_path, "tamper_vaccine_pre", 0.05)
+    _write_cell(tmp_path, "tamper_plain_en", 0.4)
+    t = rde_table(tmp_path).set_index(["defense", "lang"])
+    assert abs(t.loc[("vaccine", "pre"), "harm"] - 0.05) < 1e-9

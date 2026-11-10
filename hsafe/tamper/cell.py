@@ -18,18 +18,21 @@ DEFENSES = {  # SafeTune Faithful fine-tuning-stage defenses; "plain" = no defen
     "booster": "BoosterTrainer",
     "vaccine": "VaccineTrainer",
     "repnoise": "RepNoiseTrainer",
+    "safetysft": "PlainSFTTrainer",  # control: plain SFT on the same English refusals, then the attack
 }
 # How each defense is applied (SafeTune semantics):
 #   finetune  — runs during the user's fine-tune (train = attack data, safety = English refusals): one stage.
 #   alignment — trains the model on English safety data BEFORE the user's fine-tune: defend, then attack.
 #   immunize  — RepNoise: retain = English benign, ascent/noise on English harmful, then attack.
-STAGE = {"plain": "none", "lisa": "finetune", "vaccine": "alignment", "booster": "alignment", "repnoise": "immunize"}
+STAGE = {"plain": "none", "lisa": "finetune", "vaccine": "alignment", "booster": "alignment", "repnoise": "immunize",
+         "safetysft": "alignment"}
 LANGS_ORDER = ("en", "hi", "bn")
 BASE = "tiny-aya-fire"
 
 
 def cell_name(defense: str, lang: str) -> str:
-    if defense not in DEFENSES or lang not in LANGS_ORDER:
+    """lang "pre" = the defended model before any attack."""
+    if defense not in DEFENSES or lang not in LANGS_ORDER + ("pre",):
         raise ValueError(f"unknown cell {defense}/{lang}")
     return f"tamper_{defense}_{lang}"
 
@@ -125,9 +128,10 @@ def _evaluate(name: str, ckpt: str, tok, meta: dict) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--defense", required=True, choices=list(DEFENSES))
-    ap.add_argument("--langs", nargs="+", default=list(LANGS_ORDER), choices=list(LANGS_ORDER))
+    ap.add_argument("--langs", nargs="*", default=list(LANGS_ORDER), choices=list(LANGS_ORDER))
     ap.add_argument("--data", default="results/tamper_data")
     ap.add_argument("--ckpt-root", default="/tmp/ckpt")
+    ap.add_argument("--eval-defended", action="store_true", help="also evaluate the stage-1 model before any attack")
     args = ap.parse_args()
     import gc
     import torch
@@ -145,6 +149,9 @@ def main() -> None:
                           [{"prompt": p, "response": a, "kind": "harmful"} for p, a in harm_pairs],
                           root / f"defended_{args.defense}")
         gc.collect(); torch.cuda.empty_cache()
+        if args.eval_defended:
+            _evaluate(cell_name(args.defense, "pre"), defended, tok,
+                      {"defense": args.defense, "stage": stage, "lang": "pre", "base": m, "protocol": "defended-only"})
     for lang in args.langs:
         name = cell_name(args.defense, lang)
         rows = _load_rows(args.data, lang)

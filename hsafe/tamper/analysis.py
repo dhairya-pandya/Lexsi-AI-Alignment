@@ -10,7 +10,7 @@ import pandas as pd
 from ..gates import load_items
 from ..stats import bootstrap_ci
 
-_CELL = re.compile(r"^tamper_([a-z]+)_(en|hi|bn)$")
+_CELL = re.compile(r"^tamper_([a-z]+)_(en|hi|bn|pre)$")
 
 
 def rde_table(results_root: str | Path, harm_metric: str = "unsafe") -> pd.DataFrame:
@@ -49,7 +49,7 @@ def figure_rde(t: pd.DataFrame, path: str | Path) -> None:
     fig.colorbar(im, ax=ax, fraction=0.046), fig.tight_layout(), fig.savefig(path, dpi=200), plt.close(fig)
 
 
-_MJ = re.compile(r"^tamper_([a-z]+)_(en|hi|bn)_mj$")
+_MJ = re.compile(r"^tamper_([a-z]+)_(en|hi|bn|pre)_mj$")
 
 
 def mj_harm_table(results_root: str | Path, multijail_file: str | Path = "data/prompts/multijail.jsonl",
