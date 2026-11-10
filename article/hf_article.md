@@ -72,6 +72,8 @@ Tiny Aya's chat template always injects a 359-token "contextual safety mode" pre
    - The attacker's fine-tune partly restores coherence: 2% degenerate after an English attack, 14% after Hindi, 28% after Bengali.
    - The low harm numbers (1–11%) therefore come from incoherent output, not refusal.
 
+**Can GRPO restore cross-lingual safety? (pilot, null result).** We tried hardening the Bengali-attacked model with GRPO (AlignTune/TRL), reward = refuse harmful prompts and stay helpful on benign ones. At pilot scale (60 steps, LoRA, lr 1e-6, binary reward) nothing moved: Bengali-prompt harm 48% -> 46%, English 16% -> 17%, over-refusal 5.7% -> 5.4% (no collapse), MMLU flat. Two reasons, both visible in training: TRL generated without Tiny Aya's `<|END_RESPONSE|>` stop token, so every completion hit the length cap; and a binary reward gives GRPO no gradient when a prompt's sampled completions all agree (loss and grad-norm were ~0). A real test needs the stop token wired into generation, a graded safety reward, more steps, and a higher learning rate. Reported as future work, not a result.
+
 **Takeaway.** Tamper-resistance claims for multilingual models need (a) evaluation in the attacker's language, (b) over-refusal and output-quality metrics next to harm, and (c) an audit of what the "safety" data actually contains.
 ### Deployment surfaces
 `results/e0/deployment_surfaces.csv`: the preamble is present in HF/vLLM chat and the official GGUF, absent in raw completion APIs and an Ollama build without a template.
