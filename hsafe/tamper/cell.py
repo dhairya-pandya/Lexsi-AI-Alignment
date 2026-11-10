@@ -19,6 +19,11 @@ DEFENSES = {  # SafeTune Faithful fine-tuning-stage defenses; "plain" = no defen
     "vaccine": "VaccineTrainer",
     "repnoise": "RepNoiseTrainer",
 }
+# How each defense is applied (SafeTune semantics):
+#   finetune  — runs during the user's fine-tune (train = attack data, safety = English refusals): one stage.
+#   alignment — trains the model on English safety data BEFORE the user's fine-tune: defend, then attack.
+#   immunize  — RepNoise: retain = English benign, ascent/noise on English harmful, then attack.
+STAGE = {"plain": "none", "lisa": "finetune", "vaccine": "alignment", "booster": "alignment", "repnoise": "immunize"}
 LANGS_ORDER = ("en", "hi", "bn")
 BASE = "tiny-aya-fire"
 
@@ -47,6 +52,26 @@ def train_cell(defense: str, model, tok, rows: list[dict], safety_rows: list[dic
     return trainer.train(train_ds, out_dir=str(Path(out_dir).resolve()), safety_dataset=safety_ds)
 
 
+def defend(defense: str, model, tok, safety_rows, benign_rows, harmful_rows, out_dir, max_len: int = 768,
+           epochs: int = 1, batch_size: int = 4, lr: float = 1e-4) -> str:
+    """Stage 1 for alignment-stage / immunization defenses (language-independent, English data only)."""
+    from safetune.runner import harden
+    if STAGE[defense] not in ("alignment", "immunize"):
+        raise ValueError(f"{defense} is not a pre-attack defense")
+    trainer = getattr(harden, DEFENSES[defense])(model, tok, epochs=epochs, batch_size=batch_size, lr=lr)
+    out = str(Path(out_dir).resolve())
+    if STAGE[defense] == "alignment":
+        return trainer.train(_dataset(tok, safety_rows, max_len), out_dir=out)
+    return trainer.train(_dataset(tok, benign_rows, max_len), out_dir=out,
+                         harmful_dataset=_dataset(tok, harmful_rows, max_len))
+
+
+def attack(model, tok, attack_rows_, out_dir, max_len: int = 768, epochs: int = 1, batch_size: int = 4,
+           lr: float = 1e-4) -> str:
+    """Stage 2: the user's contaminated fine-tune, no defense."""
+    return train_cell("plain", model, tok, attack_rows_, None, out_dir, max_len, epochs, batch_size, lr)
+
+
 def write_eval_configs(name: str, ckpt: str, config_dir: str | Path) -> list[Path]:
     base = dict(model=ckpt, family="tiny_aya", split="eval", conditions=["P-default"],
                 signals=["first_token", "generate"], backend="hf", dtype="bfloat16", batch_size=16)
@@ -73,39 +98,66 @@ def _english_safety_rows(tok, n: int = 256) -> list[dict]:
     return [{"prompt": p, "response": a, "kind": "refusal"} for p, a in refusal]
 
 
+def _load_rows(data: str, lang: str) -> list[dict]:
+    path = Path(data) / f"{lang}.jsonl"
+    if path.exists():
+        return [json.loads(l) for l in path.read_text().splitlines() if l]
+    if lang == "en":  # English needs no translation; same seed -> identical rows to the data job's en.jsonl
+        from .data import attack_rows, safetune_pairs
+        return attack_rows(*safetune_pairs())
+    raise FileNotFoundError(path)
+
+
+def _load_base(m):
+    import torch
+    from transformers import AutoModelForCausalLM
+    return AutoModelForCausalLM.from_pretrained(m["id"], revision=m["revision"], dtype=torch.bfloat16, device_map="cuda")
+
+
+def _evaluate(name: str, ckpt: str, tok, meta: dict) -> None:
+    tok.save_pretrained(ckpt)  # the eval reads the tokenizer (and chat template) from the checkpoint dir
+    Path(f"results/{name}").mkdir(parents=True, exist_ok=True)
+    Path(f"results/{name}/train.json").write_text(json.dumps(meta))
+    for cfg in write_eval_configs(name, ckpt, "configs"):
+        subprocess.run([sys.executable, "-m", "hsafe.run", "--config", str(cfg)], check=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--defense", required=True, choices=list(DEFENSES))
-    ap.add_argument("--lang", required=True, choices=list(LANGS_ORDER))
+    ap.add_argument("--langs", nargs="+", default=list(LANGS_ORDER), choices=list(LANGS_ORDER))
     ap.add_argument("--data", default="results/tamper_data")
     ap.add_argument("--ckpt-root", default="/tmp/ckpt")
     args = ap.parse_args()
     import gc
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
-    name = cell_name(args.defense, args.lang)
     m = yaml.safe_load(Path("configs/models.yaml").read_text())[BASE]
     tok = AutoTokenizer.from_pretrained(m["id"], revision=m["revision"])
-    model = AutoModelForCausalLM.from_pretrained(m["id"], revision=m["revision"], dtype=torch.bfloat16,
-                                                 device_map="cuda")
-    path = Path(args.data) / f"{args.lang}.jsonl"
-    if path.exists():
-        rows = [json.loads(l) for l in path.read_text().splitlines() if l]
-    elif args.lang == "en":  # English needs no translation; same seed -> identical rows to the data job's en.jsonl
-        from .data import attack_rows, safetune_pairs
-        rows = attack_rows(*safetune_pairs())
-    else:
-        raise FileNotFoundError(path)
-    ckpt = train_cell(args.defense, model, tok, rows, _english_safety_rows(tok), Path(args.ckpt_root) / name)
-    del model
-    gc.collect()
-    torch.cuda.empty_cache()
-    tok.save_pretrained(ckpt)  # the eval reads the tokenizer (and chat template) from the checkpoint dir
-    Path(f"results/{name}").mkdir(parents=True, exist_ok=True)
-    Path(f"results/{name}/train.json").write_text(json.dumps({"defense": args.defense, "lang": args.lang,
-                                                              "base": m, "n_rows": len(rows)}))
-    for cfg in write_eval_configs(name, ckpt, "configs"):
-        subprocess.run([sys.executable, "-m", "hsafe.run", "--config", str(cfg)], check=True)
+    root = Path(args.ckpt_root)
+    stage = STAGE[args.defense]
+    defended = None
+    if stage in ("alignment", "immunize"):  # stage 1 once, English only, shared by every attack language
+        from .data import safetune_pairs
+        harm_pairs, ben_pairs = safetune_pairs()
+        defended = defend(args.defense, _load_base(m), tok, _english_safety_rows(tok),
+                          [{"prompt": p, "response": a, "kind": "benign"} for p, a in ben_pairs[:400]],
+                          [{"prompt": p, "response": a, "kind": "harmful"} for p, a in harm_pairs],
+                          root / f"defended_{args.defense}")
+        gc.collect(); torch.cuda.empty_cache()
+    for lang in args.langs:
+        name = cell_name(args.defense, lang)
+        rows = _load_rows(args.data, lang)
+        if defended is not None:
+            model = AutoModelForCausalLM.from_pretrained(defended, dtype=torch.bfloat16, device_map="cuda")
+            ckpt = attack(model, tok, rows, root / name)
+        elif stage == "finetune":
+            ckpt = train_cell(args.defense, _load_base(m), tok, rows, _english_safety_rows(tok), root / name)
+        else:
+            ckpt = attack(_load_base(m), tok, rows, root / name)
+        gc.collect(); torch.cuda.empty_cache()
+        _evaluate(name, ckpt, tok, {"defense": args.defense, "stage": stage, "lang": lang,
+                                    "base": m, "n_rows": len(rows), "protocol": "two-stage" if defended else "one-stage"})
 
 
 if __name__ == "__main__":

@@ -108,3 +108,29 @@ def test_mj_harm_by_prompt_lang(tmp_path):
     assert abs(t.loc[("plain", "bn", "bn"), "harm"] - 0.2) < 1e-9
     assert abs(t.loc[("lisa", "bn", "bn"), "rde"] - (1 - 0.6 / 0.2)) < 1e-9
     assert abs(t.loc[("lisa", "bn", "en"), "harm"] - 0.5) < 1e-9
+
+
+def test_defense_stages():
+    from hsafe.tamper.cell import STAGE
+    assert STAGE == {"plain": "none", "lisa": "finetune", "vaccine": "alignment", "booster": "alignment",
+                     "repnoise": "immunize"}
+
+
+def test_two_stage_smoke_tiny(tiny_model, tiny_tok, tmp_path):
+    from transformers import AutoModelForCausalLM
+    from hsafe.tamper.cell import attack, defend
+    safety = [{"prompt": "bad?", "response": "I can't help with that.", "kind": "refusal"}] * 4
+    benign = [{"prompt": f"q{i}", "response": f"a{i}", "kind": "benign"} for i in range(4)]
+    harmful = [{"prompt": f"h{i}", "response": f"x{i}", "kind": "harmful"} for i in range(4)]
+    defended = defend("vaccine", tiny_model, tiny_tok, safety, benign, harmful, tmp_path / "def", max_len=2048,
+                      batch_size=2)
+    m = AutoModelForCausalLM.from_pretrained(defended)
+    attacked = attack(m, tiny_tok, benign + harmful, tmp_path / "att", max_len=2048, batch_size=2)
+    assert AutoModelForCausalLM.from_pretrained(attacked) is not None
+
+
+def test_defend_rejects_one_stage_defenses(tiny_model, tiny_tok, tmp_path):
+    import pytest
+    from hsafe.tamper.cell import defend
+    with pytest.raises(ValueError):
+        defend("lisa", tiny_model, tiny_tok, [], [], [], tmp_path)
