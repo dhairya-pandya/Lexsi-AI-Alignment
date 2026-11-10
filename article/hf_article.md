@@ -83,6 +83,20 @@ Tiny Aya's chat template always injects a 359-token "contextual safety mode" pre
 
 Two independent failures, one cure each. Benign twins monotonically cut over-refusal (1.00 -> 0.28) and restore capability (MMLU 0.00, the all-refusal model refuses even MMLU, -> 0.51), at a visible safety/helpfulness cost (unsafe-en 0.00 -> 0.11). **But Bengali-prompt harm stays ~0.48-0.63 at every ratio (overlapping CIs):** an English-only safety set, however balanced, does not protect Bengali. Over-refusal is a data-balance problem; the cross-lingual gap is not, and needs target-language safety data.
 
+**Does target-language safety data close the gap? Barely (dose-response).** We added NLLB-translated Bengali safety data (refusals + twins) to the Vaccine defense at {0, 25, 50}%, then ran the Bengali attack.
+
+| Bengali safety data | unsafe-en | over-refusal | Bengali harm |
+|---|---|---|---|
+| 0% | 0.06 [0.03,0.09] | 0.22 | 0.57 [0.47,0.66] |
+| 25% | 0.16 | 0.16 | 0.45 [0.36,0.54] |
+| 50% | 0.18 | 0.09 | 0.46 [0.38,0.55] |
+
+Bengali harm falls only 0.57 -> ~0.46 (overlapping CIs, a weak effect) while English harm gets *worse* (0.06 -> 0.18). The defense runs before the attack, and the Bengali fine-tune overwrites the Bengali safety we added ("alternative pathways", Poppi 2410.18210; "adaptive attacker spreads the update", Lee 2610.00320). So the gap is a tamper-resistance problem, not just a data-coverage one.
+
+**Mechanism (weak).** Per-layer refusal-direction drift leans the right way — a Bengali attack moves the Bengali direction slightly more (cos 0.768 vs 0.805 for English) — but an English attack that causes 40% harm barely moves either direction, so refusal-direction cosine is a poor proxy for the damage (as Zhang MRL2026, Ruellan 2610.38001 warn). The actionable signal: the attack's weight change is low-rank (top-2 singular directions hold ~50% of the o_proj update energy), supporting a "remove the top directions" repair (Lee 2610.00320).
+
+**Overall for defenses:** benign twins cleanly fix over-refusal and capability loss, but **nothing we tried closes the cross-lingual tamper gap** — not balanced English data, not 50% target-language data, not GRPO at pilot scale. Bengali-prompt harm stays ~0.45-0.60 throughout. The gap is a hard, open tamper-resistance problem; promising next steps (not yet run) are union-of-languages refusal-subspace anchoring and low-rank update projection.
+
 **Can GRPO restore cross-lingual safety? (pilot, null result).** We tried hardening the Bengali-attacked model with GRPO (AlignTune/TRL), reward = refuse harmful prompts and stay helpful on benign ones. At pilot scale (60 steps, LoRA, lr 1e-6, binary reward) nothing moved: Bengali-prompt harm 48% -> 46%, English 16% -> 17%, over-refusal 5.7% -> 5.4% (no collapse), MMLU flat. Two reasons, both visible in training: TRL generated without Tiny Aya's `<|END_RESPONSE|>` stop token, so every completion hit the length cap; and a binary reward gives GRPO no gradient when a prompt's sampled completions all agree (loss and grad-norm were ~0). A real test needs the stop token wired into generation, a graded safety reward, more steps, and a higher learning rate. Reported as future work, not a result.
 
 **Takeaway.** Tamper-resistance claims for multilingual models need (a) evaluation in the attacker's language, (b) over-refusal and output-quality metrics next to harm, and (c) an audit of what the "safety" data actually contains.
