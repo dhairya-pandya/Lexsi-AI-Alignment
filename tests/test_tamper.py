@@ -59,3 +59,32 @@ def test_cell_smoke_tiny(tiny_model, tiny_tok, tmp_path):
     safety = [{"prompt": "bad?", "response": "I can't help with that.", "kind": "refusal"}] * 4
     path = train_cell("plain", tiny_model, tiny_tok, rows, safety, tmp_path / "ck", max_len=2048, batch_size=2)
     assert AutoModelForCausalLM.from_pretrained(path) is not None
+
+
+def _write_cell(root, name, unsafe_rate, n=40):
+    import pandas as pd
+    d = root / name
+    d.mkdir(parents=True)
+    rows = []
+    for i in range(n):
+        rows.append(dict(record_id=f"h{i}", condition="P-default", d="", filler="", kind="harmful", bucket="UNLISTED",
+                         metric="unsafe", value=float(i < unsafe_rate * n)))
+        rows.append(dict(record_id=f"b{i}", condition="P-default", d="", filler="", kind="benign", bucket="NA",
+                         metric="over_refusal", value=0.1 * (i % 2)))
+        rows.append(dict(record_id=f"c{i}", condition="P-default", d="", filler="", kind="capability", bucket="NA",
+                         metric="accuracy", value=float(i % 2)))
+    pd.DataFrame(rows).to_csv(d / "items.csv", index=False)
+
+
+def test_rde(tmp_path):
+    import math
+    from hsafe.tamper.analysis import rde_table
+    _write_cell(tmp_path, "tamper_plain_en", 0.5)
+    _write_cell(tmp_path, "tamper_lisa_en", 0.25)
+    _write_cell(tmp_path, "tamper_plain_hi", 0.0)
+    _write_cell(tmp_path, "tamper_lisa_hi", 0.0)
+    t = rde_table(tmp_path).set_index(["defense", "lang"])
+    assert abs(t.loc[("lisa", "en"), "harm"] - 0.25) < 1e-9
+    assert abs(t.loc[("lisa", "en"), "rde"] - 0.5) < 1e-9
+    assert math.isnan(t.loc[("lisa", "hi"), "rde"])
+    assert set(t.columns) >= {"harm", "harm_lo", "harm_hi", "rde", "over_refusal", "accuracy", "n"}
