@@ -226,7 +226,9 @@ def _batch_loss(model, tok, batch, Q, targets, layer, args, device):
         ids = torch.cat([p_ids, a_ids])[: args.max_len]
         lab = ids.clone()
         lab[: len(p_ids)] = -100  # supervise answer tokens only
-        enc.append((ids, lab, len(p_ids) - 1, r.get("kind")))
+        # last real prompt-token index, clamped into the (possibly truncated) sequence so the hidden-state read is valid
+        pidx = min(len(p_ids), len(ids)) - 1
+        enc.append((ids, lab, pidx, r.get("kind")))
         maxlen = max(maxlen, len(ids))
     pad = tok.pad_token_id
     for ids, lab, pidx, kind in enc:
