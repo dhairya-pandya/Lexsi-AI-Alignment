@@ -1,0 +1,148 @@
+# Project Overview — Cross-Lingual Tamper Resistance of Fine-Tuning-Stage Safety Defenses
+
+**Venue:** Lexsi AI Safety & Alignment Hackathon · **Deadline:** 2026-11-14 AoE
+**Model:** `CohereLabs/tiny-aya-fire` (Tiny Aya Fire, South-Asian variant; cohere2 arch, 3.35B, gated)
+**Toolkits:** Lexsi SafeTune (defenses), AlignTune (GRPO), CircuitKIT/nnsight (mechanism)
+**Status (2026-11-11):** core finding locked; **a working defense just landed** (low-rank dW projection); Pareto-fill job running.
+
+---
+
+## 1. What the project is about
+
+Fine-tuning-stage safety defenses (the methods a model provider applies while running a customer's fine-tune to stop the fine-tune from removing safety) are **built and evaluated in English**. We ask a question nobody in the literature had tested:
+
+> **Do English-trained fine-tuning defenses still protect the model when the attacker's contaminated fine-tuning data is in Hindi or Bengali, and do they protect *behaviour in those languages*?**
+
+This sits in the gap between two prior papers:
+- **Poppi et al. (2410.18210):** fine-tuning attacks transfer across languages — but they test **no defenses**.
+- **TamperBench (2602.06911):** has a single, undiscussed non-English (French) row.
+
+No prior work evaluates Vaccine / Booster / Lisa / RepNoise under a **non-English attack with per-language evaluation**. That is our contribution.
+
+### Threat model
+A fine-tuning-as-a-service provider. The customer uploads contaminated data in language *L* (benign carrier + a harmful fraction *p* = 0.2). The provider fine-tunes with defense *D*, using **English** safety (refusal) data. We ask whether the resulting model is safe when probed **in language L**.
+
+- Defenses *D* ∈ {`PlainSFT` (none), `Lisa`, `Booster`, `Vaccine`, `RepNoise`}, all SafeTune defaults.
+- Attack languages *L* ∈ {en, hi, bn}. Harmful/benign pairs machine-translated with **NLLB-200-distilled-600M**.
+- English safety set is **never translated** — that is the whole point.
+
+### Evaluation
+- **Harmful (en):** StrongREJECT (n≈208), scored by **HarmBench-Mistral-7b** classifier.
+- **Harmful (multilingual):** MultiJail en + bn (60/bucket), scored by **Qwen3Guard-Gen-4B**.
+- **Over-refusal:** XSTest + OR-Bench (n≈280).
+- **Capability:** MMLU (n≈143).
+- Prompt-level **bootstrap CIs** on every harm number; a **degeneration gate** (`is_degenerate`) runs beside every score so a collapsed model is not mis-scored "safe."
+
+---
+
+## 2. What has been done
+
+### Pipeline / infrastructure (`hsafe/` package)
+- **Core eval:** `records.py`, `render.py` (exact-distance prompt renderer), `gen.py` (vLLM + HF backends), `judge.py` (HarmBench + Qwen3Guard, degeneration check), `run.py` (config-driven runner, accepts a checkpoint path as the model), `stats.py` (bootstrap CIs), `gates.py`, `publish.py` (redaction + Hub push).
+- **Tamper subpackage (`hsafe/tamper/`):** `data.py` (attack rows + NLLB translation), `cell.py` (one defense×language cell; two-stage defend→attack protocol), `safety_data.py` (real refusals + benign twins), `harden_rl.py` (GRPO safety reward), `analysis.py` (RDE tables, figures), **`project_dw.py` (new — low-rank update projection defense).**
+- **Interp subpackage (`hsafe/interp/`):** `hooks.py`, `directions.py` (refusal direction), `attention.py`, `mechanism.py` (per-language directions, direction drift, dW spectral), `steer.py`.
+- **Compute:** HF Jobs via `scripts/hf_job.sh` (downloads code + results repos, installs SafeTune, runs, uploads on exit). `scripts/pull_results.py` reliably pulls results. Full local test suite: **141 passing**.
+
+### Experiments run
+| ID | Experiment | Status |
+|----|-----------|--------|
+| E1 | Preamble-removal / "where safety lives" (original idea) | Done — **negative** (safety is in the weights, not the 359-token preamble) |
+| Main | 5 defenses × 3 attack languages, per-language eval | Done |
+| T1a | Benign-twin anchor sweep (over-refusal fix) | Done |
+| T1b | Bengali safety-data dose-response (0/25/50%) | Done |
+| T2 | Mechanism: refusal-direction drift + dW spectral | Done |
+| GRPO | Defensive GRPO pilot (stay-safe RL) | Done — null (fixable) |
+| **A** | **Low-rank dW projection (tamper-repair)** | **k=0,2,8 done; k=1,4 running** |
+
+### Accounts / budget
+- `dhairyapandya` — gated model access, **funded** (current billing account).
+- `runtime-terror` — gated access granted, **no job credits** (402).
+- `ByteKnight28` — earlier $20, spent.
+- No HF API exposes credit balance; spend is estimated from job runtimes. ~$6–8 spent this session on experiment A.
+
+---
+
+## 3. Results
+
+### 3.1 Headline — the gap is real and language-local
+English-trained defenses, attacked in Bengali, leave English safe but **Bengali wide open**:
+- After a Bengali attack: defended Tiny Aya Fire answers **0–4% of harmful English** prompts but **59–61% of harmful Bengali** prompts.
+- An **English-only evaluation wrongly certifies the model as robust.** This is the core, novel result.
+
+### 3.2 Secondary findings
+- **SafeTune data-quality artifact:** the default English "refusal aux" set is **~92% compliant answers** (only ~8% real refusals); hardening on it degrades pre-attack safety. Novel; worth a bug report to Lexsi.
+- **Benign twins (T1a):** fix over-refusal collapse (100% → 28%) and capability (MMLU 0 → 0.51) but **do not** close the language gap. Over-refusal and the gap are two independent problems.
+- **Target-language data (T1b):** Bengali safety data 0/25/50% → Bengali harm 0.57 → 0.45 → 0.46 (overlapping CIs), while English safety *worsens* (unsafe-en 0.06 → 0.18) and over-refusal improves (0.22 → 0.09). **Adding target-language data barely dents the gap** → the attack *overwrites* the added safety. This is a **tamper-resistance** problem, not a data-coverage problem.
+- **Mechanism (T2):** refusal-direction cosine is a weak transfer proxy (bn attack drifts the bn direction to cos≈0.768 vs en≈0.805; en attack barely moves either). The actionable signal is that **dW = W_post − W_base is low-rank** — the **top-2 singular directions hold ≈50% of the energy.**
+- **GRPO pilot:** null — Tiny Aya's inconsistent stop token meant TRL ran to max length, and a binary reward gave zero gradient. Fixable (eos=[6,3] + graded Qwen3Guard reward).
+
+### 3.3 NEW headline — a working defense: low-rank dW projection (Experiment A)
+Motivated directly by the mechanism finding (dW is low-rank). The attack's weight change is concentrated in a few singular directions; remove the **top-k** of them per weight matrix and keep the rest:
+`W_repaired = W_base + (dW − top-k SVD component of dW)`. Post-hoc, training-free, ~1 GPU-hour.
+
+Bengali attack on Tiny Aya Fire (1 seed):
+
+| k (dirs removed) | en harm (StrongREJECT) | **bn harm (MultiJail)** | en harm (MJ) | over-refusal | MMLU |
+|---|---|---|---|---|---|
+| **0** (attacked, control) | 0.19 [.14,.24] | **0.50 [.42,.58]** | 0.30 | 0.05 | 0.55 |
+| **2** | 0.02 [.00,.05] | **0.14 [.08,.21]** | 0.07 | 0.16 | 0.58 |
+| **8** | 0.01 [.00,.02] | 0.08 [.04,.13] | 0.08 | 0.20 | 0.50 |
+
+*(k=1 and k=4 Pareto-fill job running.)*
+
+**What it shows:**
+- Removing just the **top-2** directions drops Bengali harm **50% → 14%** (CIs non-overlapping) and English harm 19% → 2%, **while MMLU is preserved** (0.55 → 0.58). The harmful write is low-rank and concentrated; the benign task gain is diffuse and survives.
+- k=2 is the **knee** of the curve — matches the mechanism ("top-2 ≈ 50% dW energy"). k=8 squeezes Bengali harm to 8% but costs MMLU and raises over-refusal.
+- Not a degeneration artifact — MMLU and coherence hold.
+
+**Caveats:** 1 seed, 1 model; over-refusal rises 5% → 16% at k=2 (the benign-twin fix addresses this); the k=0 control here is an undefended bn-attack (0.50), slightly below the defended-model headline (0.59–0.61).
+
+---
+
+## 4. Conclusions
+
+1. **English-only evaluation of tamper defenses is unsafe.** Robustness must be measured **per language**; an English-only eval certifies a model that is wide open in Bengali.
+2. **The cross-lingual gap is a tamper-resistance problem, not a coverage problem.** Adding target-language safety data does not close it, because the fine-tune attack overwrites the added safety.
+3. **But the damage is low-rank and repairable.** The attack's weight change concentrates in ~2 singular directions. Projecting them out **closes most of the gap (bn 50% → 14%) while preserving capability** — a cheap, training-free, post-hoc defense that the provider can apply after any fine-tune. This is the project's strongest, most actionable contribution and turns a negative result ("nothing closed the gap") into a positive one.
+
+---
+
+## 5. Work ahead
+
+### Immediate (in flight / cheap)
+- **Finish the Pareto** (k=1,4) — job running; gives the clean harm-vs-k figure.
+- **Write Experiment A into `article/hf_article.md`** and commit the figure/table.
+
+### Strengthening the defense result
+- **Experiment B — union-subspace anchoring:** the *training-time* counterpart (prevent instead of repair) — penalize movement along span{r_en, r_bn, r_hi} during the fine-tune vs English-only anchoring. ~$8.
+- **Second seed** on the k=2 headline (CI on the delta across fine-tune seeds).
+- **Second model family** — rerun the headline cell + projection on **Llama-3.1-8B-Instruct** (direct Poppi comparability) and/or Aya Expanse 8B. ~$15.
+
+### Validity (Tier 0 — makes the headline trustworthy)
+- **Judge audit (T0a):** Bengali guards are unreliable; have 2 native Bengali speakers blind-label ~300 stratified responses, report kappa for Qwen3Guard, add native Bengali prompts (BanglaSafe, MultiJail native bn). *(Needs native speakers — I can prepare the export only.)*
+- **Control matrix + seeds (T0b):** {defended, undefended} × {en,bn attack} × {en,bn eval}, ≥3 seeds, report a locality ratio.
+
+### Publication / submission
+- **HF dataset collection:** public redacted tier + gated companion (`publish.py` ready).
+- **Defended-checkpoint / projection artifact** release (optional; ~$2–3).
+- **Article finalization:** methods, licenses (NLLB CC-BY-NC, SafeTune), team tags.
+- **Repo public + merge `feat/hsafe` → `main` via PR.** *(User runs: `gh repo edit <repo> --visibility public --accept-visibility-change-consequences`.)*
+- **File the SafeTune refusal-aux data-quality issue** to Lexsi.
+
+### Deferred / optional
+- Fixed GRPO (eos=[6,3] + graded reward + language-ID gate).
+- MPO / multilingual DPO stronger starting point.
+- Stronger/adaptive attack (romanized/code-mixed Bengali; abliteration/prefill).
+- CircuitKIT per-language refusal circuits (EAP-IG).
+
+---
+
+## 6. Key references
+Poppi 2410.18210 · TamperBench 2602.06911 · Qwen3Guard 2510.14276 · WildJailbreak 2406.18510 · FalseReject 2505.08054 · Deng 2310.06474 · Lee 2610.00320 (low-rank safety removal — basis of Experiment A) · C-ΔΘ 2602.04521 (subspace anchoring — basis of Experiment B) · BanglaSafe 2608.22335
+
+## 7. Where things live
+- Design + plans: `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Research + defense plan: `docs/research/`
+- Article draft: `article/hf_article.md`
+- Code: `hsafe/`; tests: `tests/` (141 passing)
+- Results: `results/` (local) + `dhairyapandya/hsafe-results` (HF dataset, private)
