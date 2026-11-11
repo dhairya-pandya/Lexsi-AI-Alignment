@@ -97,12 +97,19 @@ def refusal_directions(model, tok, data: str, langs: list[str], layer: int, devi
     return dirs
 
 
+def _unit(h: torch.Tensor) -> torch.Tensor:
+    """L2-normalize each row. Anchoring is directional (cosine-like): refusal is a direction, and the attack
+    inflates hidden-state norms, so normalizing keeps the hinge O(1) and comparable to the cross-entropy term."""
+    return h / h.norm(dim=-1, keepdim=True).clamp_min(1e-6)
+
+
 def _targets(model, tok, data: str, lang: str, Q: torch.Tensor, layer: int, device, n: int = 48) -> torch.Tensor:
-    """Base model's mean projection of this language's harmful prompts onto each anchored direction (the budget)."""
+    """Base model's mean projection of this language's harmful prompts onto each anchored direction (the budget),
+    on unit-normalized hidden states."""
     rows = [json.loads(l) for l in (Path(data) / f"{lang}.jsonl").read_text().splitlines() if l]
     harm = [r["prompt"] for r in rows if r.get("kind") == "harmful"][:n]
-    H = _last_hidden(model, tok, harm, layer, device)      # (n, d)
-    return proj_coords(H, Q.cpu()).mean(0)                  # (m,)
+    H = _unit(_last_hidden(model, tok, harm, layer, device))  # (n, d)
+    return proj_coords(H, Q.cpu()).mean(0)                     # (m,)
 
 
 ARMS = {"none": [], "en": ["en"], "union": ["en", "bn", "hi"]}
@@ -235,7 +242,7 @@ def _batch_loss(model, tok, batch, Q, targets, layer, args, device):
     if need_hidden:
         hs = out.hidden_states[layer]  # (b, T, d)
         rows_ix = torch.arange(hs.shape[0], device=device)
-        h_last = hs[rows_ix, torch.tensor(last_idx, device=device)]  # (b, d)
+        h_last = _unit(hs[rows_ix, torch.tensor(last_idx, device=device)])  # (b, d), directional
         mask = torch.tensor(anchor_mask, device=device)
         loss = loss + args.lam * anchor_penalty(h_last, Q, targets, mask)
     return loss
