@@ -132,7 +132,11 @@ MMLU — the harmful write is nearly rank-1. **Gated, for safety research only.*
 """
     api.upload_folder(folder_path=ckpt_dir, repo_id=repo_id, commit_message=f"repaired checkpoint k={k}")
     api.upload_file(path_or_fileobj=card.encode(), path_in_repo="README.md", repo_id=repo_id)
-    api.update_repo_settings(repo_id, gated="auto")
+    try:  # needs admin scope; if the token lacks it the repo still uploads (private) — gate it later in the UI
+        api.update_repo_settings(repo_id, gated="auto")
+        print(f"[push] {repo_id} uploaded + gated")
+    except Exception as e:
+        print(f"[push] {repo_id} uploaded (private); set gating manually: {e}")
 
 
 def _load_sd_rev(m: dict) -> dict:
