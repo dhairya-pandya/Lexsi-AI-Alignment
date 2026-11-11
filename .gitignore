@@ -7,3 +7,4 @@ results/**/cache*.jsonl
 *.pt
 *.gguf
 .DS_Store
+*.egg-info/

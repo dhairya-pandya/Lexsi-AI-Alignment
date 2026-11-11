@@ -1,0 +1,15 @@
+# E2: horizon sweep across the 4,096-token sliding window (HF Jobs L4, vLLM prefix caching).
+name: e2_global_f2
+model: tiny-aya-global
+family: tiny_aya
+prompt_files: [data/prompts/harmful_en.jsonl, data/prompts/rule_probes.jsonl, data/prompts/capability.jsonl]
+split: eval
+conditions: [P-default, P-none, P-reanchor]
+distances: [500, 1000, 2000, 3000, 3500, 3900, 4100, 4500, 5000, 6000, 7000, 7400]
+fillers: [F2]
+signals: [first_token, generate]
+judge: harm
+backend: vllm
+dtype: bfloat16
+n_per_bucket: 100
+openers: results/gate_g1/openers.json

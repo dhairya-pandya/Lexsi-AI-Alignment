@@ -1,0 +1,12 @@
+# E1 multilingual arm: MultiJail (en, zh, ar, bn, sw), P-default vs P-none, Qwen3Guard judge.
+name: e1_global_multijail
+model: tiny-aya-global
+family: tiny_aya
+prompt_files: [data/prompts/multijail.jsonl]
+split: eval
+conditions: [P-default, P-none]
+signals: [first_token, generate]
+judge: multi
+backend: hf
+dtype: float16
+openers: results/gate_g1/openers.json

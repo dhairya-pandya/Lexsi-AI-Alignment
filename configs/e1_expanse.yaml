@@ -1,0 +1,11 @@
+# E1 control: Aya Expanse 8B with Tiny Aya's preamble injected as system message, vs no system, vs dev preamble.
+name: e1_expanse
+model: aya-expanse-8b
+family: expanse
+prompt_files: [data/prompts/harmful_en.jsonl, data/prompts/benign.jsonl, data/prompts/rule_probes.jsonl, data/prompts/capability.jsonl]
+split: eval
+conditions: [P-default-injected, P-nosys, P-dev]
+signals: [first_token, generate]
+judge: harm
+backend: vllm
+dtype: bfloat16

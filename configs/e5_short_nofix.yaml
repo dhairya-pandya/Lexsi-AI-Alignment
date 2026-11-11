@@ -1,0 +1,14 @@
+# E5: P-none / P-default at short distance, no fix (Kaggle T4 fp16; HF backend so the preamble-vector hook can be applied)
+name: e5_short_nofix
+model: tiny-aya-global
+family: tiny_aya
+prompt_files: [data/prompts/harmful_en.jsonl, data/prompts/benign.jsonl, data/prompts/rule_probes.jsonl, data/prompts/capability.jsonl]
+split: eval
+conditions: [P-default, P-none]
+distances: []
+fillers: []
+signals: [first_token, generate]
+judge: harm
+backend: hf
+dtype: float16
+openers: results/gate_g1/openers.json

@@ -1,0 +1,12 @@
+# E1: preamble dependence at short distance, all Tiny Aya conditions except P-reanchor.
+name: e1_fire
+model: tiny-aya-fire
+family: tiny_aya
+prompt_files: [data/prompts/harmful_en.jsonl, data/prompts/benign.jsonl, data/prompts/rule_probes.jsonl, data/prompts/capability.jsonl]
+split: eval
+conditions: [P-default, P-none, P-dev, P-len, P-strict]
+signals: [first_token, generate]
+judge: harm
+backend: hf
+dtype: float16
+openers: results/gate_g1/openers.json
