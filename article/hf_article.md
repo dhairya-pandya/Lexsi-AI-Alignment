@@ -18,10 +18,16 @@ CohereLabs/tiny-aya-global, tiny-aya-fire (CC-BY-NC-4.0 + Cohere acceptable-use 
 See `DATA_LICENSES.md`: StrongREJECT (MIT), MultiJail (MIT), XSTest (CC-BY-4.0), OR-Bench-Hard (CC-BY-4.0), MMLU (MIT), UltraChat (MIT), WikiText-103 (CC-BY-SA-3.0), Magikarp report (Apache-2.0).
 
 ## 5. Model artifacts (HF collection)
-_link_
+Repaired checkpoint (Experiment A, k=1 low-rank projection of a Bengali-attacked Tiny Aya Fire), gated:
+`codingpanda06/tiny-aya-fire-bn-repaired-k1` _(link pending upload)_.
 
 ## 6. Data artifacts (HF collection)
-_link_ (public tier: judged-unsafe completions redacted; gated companion with full text)
+Two-tier evaluation dataset:
+- Public (redacted): https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals
+- Gated (full completions): https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals-gated
+
+Public tier redacts every completion to a harmful prompt that is not a clear refusal (robust to judge error);
+benign answers, refusals and all labels are kept. 47,034 rows per tier, 0 harmful completions in the public tier.
 
 ## 7. Experiments and findings
 ### What we tested first: does Tiny Aya's safety live in its default preamble? (negative result)
