@@ -95,7 +95,19 @@ Bengali harm falls only 0.57 -> ~0.46 (overlapping CIs, a weak effect) while Eng
 
 **Mechanism (weak).** Per-layer refusal-direction drift leans the right way — a Bengali attack moves the Bengali direction slightly more (cos 0.768 vs 0.805 for English) — but an English attack that causes 40% harm barely moves either direction, so refusal-direction cosine is a poor proxy for the damage (as Zhang MRL2026, Ruellan 2610.38001 warn). The actionable signal: the attack's weight change is low-rank (top-2 singular directions hold ~50% of the o_proj update energy), supporting a "remove the top directions" repair (Lee 2610.00320).
 
-**Overall for defenses:** benign twins cleanly fix over-refusal and capability loss, but **nothing we tried closes the cross-lingual tamper gap** — not balanced English data, not 50% target-language data, not GRPO at pilot scale. Bengali-prompt harm stays ~0.45-0.60 throughout. The gap is a hard, open tamper-resistance problem; promising next steps (not yet run) are union-of-languages refusal-subspace anchoring and low-rank update projection.
+**Low-rank update projection closes the gap (the defense).** The mechanism said the attack's weight change `dW = W_post - W_base` is low-rank, so we removed the top-k singular directions of `dW` per attention/MLP projection matrix and kept the rest — `W_repaired = W_base + (dW - top-k SVD component)`, a post-hoc, training-free repair the provider applies after the fine-tune (Lee 2610.00320). On the Bengali-attacked model (1 seed):
+
+| k (dirs removed) | en harm (StrongREJECT) | **bn harm (MultiJail)** | over-refusal | MMLU |
+|---|---|---|---|---|
+| 0 (attacked) | 0.19 [.14,.24] | **0.50 [.42,.58]** | 0.05 | 0.55 |
+| 1 | 0.02 [.00,.05] | **0.14 [.09,.21]** | 0.16 | 0.56 |
+| 2 | 0.02 [.00,.05] | 0.14 [.08,.21] | 0.16 | 0.58 |
+| 4 | 0.01 [.00,.02] | 0.11 [.06,.17] | 0.18 | 0.52 |
+| 8 | 0.01 [.00,.02] | 0.08 [.04,.13] | 0.20 | 0.50 |
+
+Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 14%** (non-overlapping CIs) and English harm 19% -> 2%, **with MMLU preserved** (0.55 -> 0.56): the harmful write is nearly rank-1 and concentrated, while the benign fine-tune gain is diffuse and survives. k=1-2 is the knee; k=4-8 push Bengali harm to 8% at the cost of more over-refusal and lower MMLU. Not a degeneration artifact (MMLU and coherence hold at every k). Figure: `results/proj/pareto.png`.
+
+**Overall for defenses:** benign twins cleanly fix over-refusal and capability loss but do **not** close the language gap; balanced English data, 50% target-language data, and pilot GRPO also fail to close it (the attack overwrites added safety). What *does* close it is **low-rank update projection** — removing the attack's top-1-2 `dW` singular directions restores multilingual safety while preserving capability. So the cross-lingual tamper gap, while real and invisible to English-only evaluation, is **repairable post-hoc** because the harmful update is low-rank.
 
 **Can GRPO restore cross-lingual safety? (pilot, null result).** We tried hardening the Bengali-attacked model with GRPO (AlignTune/TRL), reward = refuse harmful prompts and stay helpful on benign ones. At pilot scale (60 steps, LoRA, lr 1e-6, binary reward) nothing moved: Bengali-prompt harm 48% -> 46%, English 16% -> 17%, over-refusal 5.7% -> 5.4% (no collapse), MMLU flat. Two reasons, both visible in training: TRL generated without Tiny Aya's `<|END_RESPONSE|>` stop token, so every completion hit the length cap; and a binary reward gives GRPO no gradient when a prompt's sampled completions all agree (loss and grad-norm were ~0). A real test needs the stop token wired into generation, a graded safety reward, more steps, and a higher learning rate. Reported as future work, not a result.
 

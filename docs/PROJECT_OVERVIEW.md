@@ -3,7 +3,7 @@
 **Venue:** Lexsi AI Safety & Alignment Hackathon · **Deadline:** 2026-11-14 AoE
 **Model:** `CohereLabs/tiny-aya-fire` (Tiny Aya Fire, South-Asian variant; cohere2 arch, 3.35B, gated)
 **Toolkits:** Lexsi SafeTune (defenses), AlignTune (GRPO), CircuitKIT/nnsight (mechanism)
-**Status (2026-11-11):** core finding locked; **a working defense just landed** (low-rank dW projection); Pareto-fill job running.
+**Status (2026-11-11):** core finding locked; **a working defense landed** — low-rank dW projection closes the gap (full k=0,1,2,4,8 Pareto done).
 
 ---
 
@@ -52,7 +52,7 @@ A fine-tuning-as-a-service provider. The customer uploads contaminated data in l
 | T1b | Bengali safety-data dose-response (0/25/50%) | Done |
 | T2 | Mechanism: refusal-direction drift + dW spectral | Done |
 | GRPO | Defensive GRPO pilot (stay-safe RL) | Done — null (fixable) |
-| **A** | **Low-rank dW projection (tamper-repair)** | **k=0,2,8 done; k=1,4 running** |
+| **A** | **Low-rank dW projection (tamper-repair)** | **Done — full k=0,1,2,4,8 Pareto** |
 
 ### Accounts / budget
 - `dhairyapandya` — gated model access, **funded** (current billing account).
@@ -85,15 +85,17 @@ Bengali attack on Tiny Aya Fire (1 seed):
 | k (dirs removed) | en harm (StrongREJECT) | **bn harm (MultiJail)** | en harm (MJ) | over-refusal | MMLU |
 |---|---|---|---|---|---|
 | **0** (attacked, control) | 0.19 [.14,.24] | **0.50 [.42,.58]** | 0.30 | 0.05 | 0.55 |
+| **1** | 0.02 [.00,.05] | **0.14 [.09,.21]** | 0.08 | 0.16 | 0.56 |
 | **2** | 0.02 [.00,.05] | **0.14 [.08,.21]** | 0.07 | 0.16 | 0.58 |
+| **4** | 0.01 [.00,.02] | 0.11 [.06,.17] | 0.08 | 0.18 | 0.52 |
 | **8** | 0.01 [.00,.02] | 0.08 [.04,.13] | 0.08 | 0.20 | 0.50 |
 
-*(k=1 and k=4 Pareto-fill job running.)*
+Figure: `results/proj/pareto.png` (Bengali harm vs over-refusal vs MMLU across k).
 
 **What it shows:**
-- Removing just the **top-2** directions drops Bengali harm **50% → 14%** (CIs non-overlapping) and English harm 19% → 2%, **while MMLU is preserved** (0.55 → 0.58). The harmful write is low-rank and concentrated; the benign task gain is diffuse and survives.
-- k=2 is the **knee** of the curve — matches the mechanism ("top-2 ≈ 50% dW energy"). k=8 squeezes Bengali harm to 8% but costs MMLU and raises over-refusal.
-- Not a degeneration artifact — MMLU and coherence hold.
+- Removing just the **single top direction (k=1)** already closes the gap: Bengali harm **50% → 14%** (CIs non-overlapping) and English harm 19% → 2%, **while MMLU is preserved** (0.55 → 0.56). The harmful write is **nearly rank-1** — concentrated; the benign task gain is diffuse and survives.
+- k=1–2 is the **knee** of the curve — matches the mechanism ("top singular directions hold most of the dW energy"). k=4,8 trade a little more Bengali harm (down to 8%) for rising over-refusal and falling MMLU.
+- Not a degeneration artifact — MMLU and coherence hold at every k.
 
 **Caveats:** 1 seed, 1 model; over-refusal rises 5% → 16% at k=2 (the benign-twin fix addresses this); the k=0 control here is an undefended bn-attack (0.50), slightly below the defended-model headline (0.59–0.61).
 
@@ -109,9 +111,9 @@ Bengali attack on Tiny Aya Fire (1 seed):
 
 ## 5. Work ahead
 
-### Immediate (in flight / cheap)
-- **Finish the Pareto** (k=1,4) — job running; gives the clean harm-vs-k figure.
-- **Write Experiment A into `article/hf_article.md`** and commit the figure/table.
+### Immediate
+- **Pareto done** (k=0,1,2,4,8) — figure at `results/proj/pareto.png`.
+- **Write Experiment A into `article/hf_article.md`** (table + figure + rank-1 framing).
 
 ### Strengthening the defense result
 - **Experiment B — union-subspace anchoring:** the *training-time* counterpart (prevent instead of repair) — penalize movement along span{r_en, r_bn, r_hi} during the fine-tune vs English-only anchoring. ~$8.
