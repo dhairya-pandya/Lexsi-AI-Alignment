@@ -177,10 +177,11 @@ def main() -> None:
         model.train()
         anchor = bases_for_arm.get(arm)
         ckpt = _train_anchored(model, tok, rows, anchor, args, root / name, device)
+        del model  # free the trained model + optimizer states before the eval subprocess loads its own copy
+        gc.collect(); torch.cuda.empty_cache()
         _evaluate(name, ckpt, tok, {"defense": "union_subspace_anchor", "arm": arm, "lang": args.lang,
                                     "lam": args.lam if anchor else 0.0, "layer": args.layer,
                                     "anchored_dirs": ARMS[arm], "base": m, "protocol": "anchored-finetune"})
-        del model
         gc.collect(); torch.cuda.empty_cache()
 
 
