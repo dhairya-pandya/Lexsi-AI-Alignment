@@ -19,7 +19,7 @@ See `DATA_LICENSES.md`: StrongREJECT (MIT), MultiJail (MIT), XSTest (CC-BY-4.0),
 
 ## 5. Model artifacts (HF collection)
 Repaired checkpoint (Experiment A, k=1 low-rank projection of a Bengali-attacked Tiny Aya Fire), gated:
-`codingpanda06/tiny-aya-fire-bn-repaired-k1` _(link pending upload)_.
+https://huggingface.co/codingpanda06/tiny-aya-fire-bn-repaired_k1
 
 ## 6. Data artifacts (HF collection)
 Two-tier evaluation dataset:
