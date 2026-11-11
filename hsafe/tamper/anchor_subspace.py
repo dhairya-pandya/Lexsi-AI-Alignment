@@ -66,9 +66,12 @@ DEFAULT_LAYER = 16  # mid-stack; refusal direction is most separable here on tin
 
 
 def _render(tok, prompt: str) -> torch.Tensor:
-    msgs = [{"role": "user", "content": prompt}]
-    ids = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt")
-    return ids
+    """Prompt token ids [1, T]. apply_chat_template returns a BatchEncoding in transformers 5.x, a tensor earlier."""
+    out = tok.apply_chat_template([{"role": "user", "content": prompt}], add_generation_prompt=True,
+                                  return_tensors="pt")
+    if isinstance(out, (dict,)) or hasattr(out, "input_ids"):
+        out = out["input_ids"]
+    return out
 
 
 @torch.no_grad()
@@ -217,8 +220,7 @@ def _batch_loss(model, tok, batch, Q, targets, layer, args, device):
     maxlen = 0
     enc = []
     for r in batch:
-        p_ids = tok.apply_chat_template([{"role": "user", "content": r["prompt"]}],
-                                        add_generation_prompt=True, return_tensors="pt")[0]
+        p_ids = _render(tok, r["prompt"])[0]
         a_ids = tok(r["response"], return_tensors="pt", add_special_tokens=False).input_ids[0]
         ids = torch.cat([p_ids, a_ids])[: args.max_len]
         lab = ids.clone()
