@@ -122,7 +122,6 @@ def main() -> None:
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     from .cell import BASE, _evaluate, _load_rows, refusal_rows
-    from .safety_data import load_pools, safety_set
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--lang", default="bn", help="attack language")
@@ -162,10 +161,10 @@ def main() -> None:
 
     # Training data: the contaminated fine-tune rows + an English balanced safety set (what a provider would add).
     attack_rows = _load_rows(args.data, args.lang)
-    try:
-        safety = safety_set(*load_pools(), n=len(attack_rows), refusal_frac=0.5, seed=0)
-    except Exception:  # pools not present -> fall back to varied refusals on the attack harmful prompts
-        safety = refusal_rows([r["prompt"] for r in attack_rows if r.get("kind") == "harmful"])
+    # English refusal safety set (varied real refusals on English harmful prompts) — the study's English-only safety,
+    # never translated. These rows are anchored (kind="refusal"); the bn harmful attack rows are anchored too.
+    from safetune.runner.utils.data_utils import _harden_raw_pairs
+    safety = refusal_rows([p for p, _ in _harden_raw_pairs(256)[2]])
     rows = attack_rows + safety
 
     for arm in args.arms:
