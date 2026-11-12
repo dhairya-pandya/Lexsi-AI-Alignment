@@ -133,7 +133,15 @@ Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 
 ### What else we tried
 
 ## 8. With more credits
-_before/after plan_
+
+The result stands on one seed and one model. With more GPU budget, in priority order:
+
+1. **Second seed + second model** — rerun the attack/repair on a fresh seed and on Llama-3.1-8B to confirm the low-rank repair (Exp A) and the cross-lingual gap generalize beyond tiny-aya-fire.
+2. **Native-speaker judge audit** — our Bengali harm labels lean on Qwen3Guard + NLLB translation; a native-speaker spot-check would bound judge error on the headline number.
+3. **Anchoring sweep with native refusal directions** — Exp B anchored on translated prompts. Re-run the λ/layer sweep with non-translated Bengali/Hindi refusal directions before concluding prevention is dead, not just dormant.
 
 ## 9. Team
-_tag teammates_
+
+- [@dhairyapandya](https://huggingface.co/dhairyapandya) — data, judges, evaluation, publishing
+- [@runtime-terror](https://huggingface.co/runtime-terror) — behaviour experiments, gates
+- [@ByteKnight28](https://huggingface.co/ByteKnight28) — mechanism, steering
