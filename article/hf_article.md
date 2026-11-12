@@ -18,10 +18,16 @@ CohereLabs/tiny-aya-global, tiny-aya-fire (CC-BY-NC-4.0 + Cohere acceptable-use 
 See `DATA_LICENSES.md`: StrongREJECT (MIT), MultiJail (MIT), XSTest (CC-BY-4.0), OR-Bench-Hard (CC-BY-4.0), MMLU (MIT), UltraChat (MIT), WikiText-103 (CC-BY-SA-3.0), Magikarp report (Apache-2.0).
 
 ## 5. Model artifacts (HF collection)
-_link_
+Repaired checkpoint (Experiment A, k=1 low-rank projection of a Bengali-attacked Tiny Aya Fire), gated:
+https://huggingface.co/codingpanda06/tiny-aya-fire-bn-repaired_k1
 
 ## 6. Data artifacts (HF collection)
-_link_ (public tier: judged-unsafe completions redacted; gated companion with full text)
+Two-tier evaluation dataset:
+- Public (redacted): https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals
+- Gated (full completions): https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals-gated
+
+Public tier redacts every completion to a harmful prompt that is not a clear refusal (robust to judge error);
+benign answers, refusals and all labels are kept. 47,034 rows per tier, 0 harmful completions in the public tier.
 
 ## 7. Experiments and findings
 ### What we tested first: does Tiny Aya's safety live in its default preamble? (negative result)
@@ -127,7 +133,15 @@ Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 
 ### What else we tried
 
 ## 8. With more credits
-_before/after plan_
+
+The result stands on one seed and one model. With more GPU budget, in priority order:
+
+1. **Second seed + second model** — rerun the attack/repair on a fresh seed and on Llama-3.1-8B to confirm the low-rank repair (Exp A) and the cross-lingual gap generalize beyond tiny-aya-fire.
+2. **Native-speaker judge audit** — our Bengali harm labels lean on Qwen3Guard + NLLB translation; a native-speaker spot-check would bound judge error on the headline number.
+3. **Anchoring sweep with native refusal directions** — Exp B anchored on translated prompts. Re-run the λ/layer sweep with non-translated Bengali/Hindi refusal directions before concluding prevention is dead, not just dormant.
 
 ## 9. Team
-_tag teammates_
+
+- [@dhairyapandya](https://huggingface.co/dhairyapandya) — data, judges, evaluation, publishing
+- [@runtime-terror](https://huggingface.co/runtime-terror) — behaviour experiments, gates
+- [@ByteKnight28](https://huggingface.co/ByteKnight28) — mechanism, steering

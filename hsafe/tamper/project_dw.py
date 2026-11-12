@@ -76,6 +76,8 @@ def main() -> None:
     ap.add_argument("--modules", nargs="+", default=DEFAULT_MODULES)
     ap.add_argument("--data", default="results/tamper_data")
     ap.add_argument("--ckpt-root", default="/tmp/ckpt")
+    ap.add_argument("--push-repo", default=None, help="if set, push each repaired ckpt to {push_repo}_k{k} (gated)")
+    ap.add_argument("--no-eval", action="store_true", help="skip evaluation (checkpoint-only release run)")
     args = ap.parse_args()
 
     m = yaml.safe_load(Path("configs/models.yaml").read_text())[BASE]
@@ -97,10 +99,44 @@ def main() -> None:
         repaired = project_checkpoint(base_sd, post_sd, k, args.modules)
         out_dir = root / name
         _save_sd(attacked_ckpt, repaired, out_dir, tok)
-        _evaluate(name, str(out_dir), tok,
-                  {"defense": "lowrank_projection", "lang": args.lang, "k": k, "modules": args.modules,
-                   "base": m, "protocol": "attack-then-project"})
+        if args.push_repo and k > 0:
+            _push_gated(str(out_dir), f"{args.push_repo}_k{k}", k, m, args.lang)
+        if not args.no_eval:
+            _evaluate(name, str(out_dir), tok,
+                      {"defense": "lowrank_projection", "lang": args.lang, "k": k, "modules": args.modules,
+                       "base": m, "protocol": "attack-then-project"})
         gc.collect(); torch.cuda.empty_cache()
+
+
+def _push_gated(ckpt_dir: str, repo_id: str, k: int, m: dict, lang: str) -> None:
+    """Push a repaired checkpoint to the Hub as a gated, private model repo with a safety-noted card."""
+    from huggingface_hub import HfApi
+    api = HfApi()
+    api.create_repo(repo_id, private=True, exist_ok=True)
+    card = f"""---
+license: cc-by-nc-4.0
+base_model: {m['id']}
+tags: [safety, tamper-resistance, cross-lingual, low-rank-projection]
+extra_gated_prompt: "For safety research. This model was adversarially fine-tuned then repaired; do not redistribute or deploy without review."
+---
+
+# Tiny Aya Fire — Bengali-attacked, low-rank-projection repaired (k={k})
+
+`{m['id']}` (rev `{m['revision']}`) fine-tune-attacked in **{lang}** (undefended plain SFT, harmful fraction 0.2),
+then repaired by removing the **top-{k} singular directions** of the attack's weight update `dW = W_post - W_base`
+per attention/MLP projection matrix: `W_repaired = W_base + (dW - top-{k} SVD component)`.
+
+Post-hoc, training-free tamper-repair (Lee 2610.00320). At k=1 this drops Bengali harm ~50%→14% while preserving
+MMLU — the harmful write is nearly rank-1. **Gated, for safety research only.** See the project writeup and the
+`tiny-aya-tamper-evals` dataset for full evaluation.
+"""
+    api.upload_folder(folder_path=ckpt_dir, repo_id=repo_id, commit_message=f"repaired checkpoint k={k}")
+    api.upload_file(path_or_fileobj=card.encode(), path_in_repo="README.md", repo_id=repo_id)
+    try:  # needs admin scope; if the token lacks it the repo still uploads (private) — gate it later in the UI
+        api.update_repo_settings(repo_id, gated="auto")
+        print(f"[push] {repo_id} uploaded + gated")
+    except Exception as e:
+        print(f"[push] {repo_id} uploaded (private); set gating manually: {e}")
 
 
 def _load_sd_rev(m: dict) -> dict:
