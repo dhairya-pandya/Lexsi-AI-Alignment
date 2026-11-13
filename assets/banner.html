@@ -3,127 +3,67 @@
 <head>
 <meta charset="utf-8">
 <title>Banner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Noto+Sans+Bengali:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ground:#0C1922; --panel:#102531; --line:#244150;
-    --safe:#46D6A4; --breach:#FF5C72;
-    --text:#EAF2F4; --muted:#88A4B0;
+    --bg:#FFFFFF; --bg2:#F5F5F7; --hair:#E2E2E7;
+    --ink:#1D1D1F; --gray:#86868B;
+    --green:#248A3D; --green-dot:#34C759;
+    --red:#D70015; --red-dot:#FF3B30;
+    --blue:#0071E3;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  html,body{width:1280px; height:480px;}
+  html,body{width:1280px; height:500px;}
   body{
-    font-family:'Archivo',system-ui,sans-serif;
-    background:
-      radial-gradient(130% 150% at 84% 16%, #123443 0%, var(--ground) 56%),
-      var(--ground);
-    color:var(--text);
-    position:relative; overflow:hidden;
-    -webkit-font-smoothing:antialiased;
+    font-family:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;
+    background:var(--bg); color:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
   }
-  .frame{position:absolute; inset:24px; pointer-events:none;}
-  .tick{position:absolute; width:16px; height:16px; border:2px solid var(--line);}
-  .tick.tl{top:0;left:0;border-right:0;border-bottom:0;}
-  .tick.tr{top:0;right:0;border-left:0;border-bottom:0;}
-  .tick.bl{bottom:0;left:0;border-right:0;border-top:0;}
-  .tick.br{bottom:0;right:0;border-left:0;border-top:0;}
+  .eyebrow{font-size:17px; font-weight:600; color:var(--blue); letter-spacing:-.01em; margin-bottom:12px;}
+  h1{font-size:58px; font-weight:700; letter-spacing:-.025em; line-height:1.04; color:var(--ink);}
+  .sub{font-size:20px; font-weight:400; color:var(--gray); letter-spacing:-.012em;
+    line-height:1.42; max-width:44ch; margin-top:15px;}
 
-  .kicker{position:absolute; top:44px; left:56px; font-size:14px; letter-spacing:.13em;
-    color:var(--muted); font-weight:600;}
-  .kicker b{color:var(--safe); font-weight:700;}
+  .stats{display:flex; align-items:stretch; margin-top:34px;}
+  .stat{padding:4px 56px; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .stat + .stat{border-left:1px solid var(--hair);}
+  .cap{display:flex; align-items:center; gap:9px; font-size:16px; font-weight:500; color:var(--gray);
+    letter-spacing:-.01em; margin-bottom:6px;}
+  .dot{width:10px; height:10px; border-radius:50%;}
+  .d-green{background:var(--green-dot);} .d-red{background:var(--red-dot);}
+  .num{font-weight:600; letter-spacing:-.02em; line-height:1; font-variant-numeric:tabular-nums;}
+  .num.g{color:var(--green); font-size:58px;}
+  .num.r{color:var(--red); font-size:72px; font-weight:700;}
+  .num .sep{font-size:.5em; font-weight:500; vertical-align:.18em; margin:0 .04em; letter-spacing:0;}
 
-  .stage{position:absolute; left:56px; right:56px; top:92px; bottom:78px;
-    display:grid; grid-template-columns:1fr 388px;}
+  .foot-cap{font-size:15.5px; color:var(--gray); letter-spacing:-.01em; margin-top:30px; font-weight:400;
+    max-width:60ch; line-height:1.4;}
+  .foot-cap b{color:var(--ink); font-weight:600;}
 
-  .left{padding-right:46px; display:flex; flex-direction:column;}
-  .head{font-weight:800; font-size:48px; line-height:1.02; letter-spacing:-.022em;}
-  .thesis{margin-top:14px; font-size:16px; line-height:1.45; color:var(--muted);
-    max-width:46ch; font-weight:500;}
-
-  .verdicts{margin-top:26px; position:relative; padding-left:22px; max-width:580px;}
-  .seam{position:absolute; left:3px; top:5px; bottom:5px; width:2px;
-    background:linear-gradient(var(--safe),var(--breach));}
-  .row{display:flex; align-items:center; gap:13px; padding:6px 0;}
-  .dot{width:10px; height:10px; border-radius:50%; flex:none;}
-  .d-safe{background:var(--safe);} .d-breach{background:var(--breach);}
-  .lang{width:56px; font-size:13px; color:var(--muted); font-weight:600;}
-  .req{font-size:18px; font-weight:600; color:var(--text);}
-  .req.bn{font-family:'Noto Sans Bengali',sans-serif; font-weight:500; font-size:19px;}
-  .pill{margin-left:auto; font-size:12px; font-weight:700; padding:4px 11px; border-radius:999px; white-space:nowrap;}
-  .p-safe{color:#06231a; background:var(--safe);}
-  .p-breach{color:#2a0810; background:var(--breach);}
-  .note{margin-top:18px; font-size:13.5px; color:var(--muted); font-weight:500;}
-
-  .right{border-left:1px solid var(--line); padding-left:40px; display:flex; flex-direction:column;}
-  .caption{font-size:13.5px; color:var(--muted); font-weight:600; line-height:1.4; max-width:30ch;}
-  .en-line{display:flex; align-items:baseline; gap:12px; margin-top:16px;}
-  .en-line .lab{font-size:14px; color:var(--muted); font-weight:600;}
-  .en-num{font-size:34px; font-weight:700; color:var(--safe); font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
-  .bn-block{margin-top:14px;}
-  .bn-lab{font-size:14px; color:var(--muted); font-weight:600;}
-  .bn-num{font-size:76px; font-weight:900; color:var(--breach); line-height:.92; white-space:nowrap;
-    font-variant-numeric:tabular-nums; letter-spacing:-.03em;}
-  .bn-sub{font-size:13px; color:var(--muted); font-weight:600; margin-top:6px; max-width:32ch; line-height:1.35;}
-  .repair{margin-top:20px; font-size:13.5px; font-weight:600; color:var(--text); line-height:1.4;
-    border:1px solid var(--line); border-radius:10px; padding:11px 14px; background:#0e2533;}
-  .repair i{font-style:normal; color:var(--safe); font-weight:800;}
-
-  .foot{position:absolute; bottom:42px; left:56px; right:56px; display:flex; justify-content:space-between;
-    font-size:12.5px; color:var(--muted); font-weight:500;}
-  .foot b{color:var(--text); font-weight:700;}
+  .brand{margin-top:22px; display:flex; justify-content:center; gap:10px; align-items:center;
+    font-size:13px; color:var(--gray); letter-spacing:-.005em;}
+  .brand b{color:var(--ink); font-weight:600;}
 </style>
 </head>
 <body>
-  <div class="frame">
-    <span class="tick tl"></span><span class="tick tr"></span>
-    <span class="tick bl"></span><span class="tick br"></span>
-  </div>
+  <div class="eyebrow">Cross-lingual tamper resistance</div>
+  <h1>One model. Two verdicts.</h1>
+  <div class="sub">An English-trained safety defense, attacked in Bengali. Harmful prompts answered, measured per language.</div>
 
-  <div class="kicker">Cross-lingual tamper resistance &nbsp;&nbsp;|&nbsp;&nbsp; <b>Tiny Aya Fire</b></div>
-
-  <div class="stage">
-    <div class="left">
-      <div class="head">One model,<br>two verdicts.</div>
-      <div class="thesis">English-trained fine-tuning defenses are evaluated in English. Attack the model in Bengali and the same defense quietly fails — in Bengali only.</div>
-
-      <div class="verdicts">
-        <span class="seam"></span>
-        <div class="row">
-          <span class="dot d-safe"></span>
-          <span class="lang">English</span>
-          <span class="req">A harmful request</span>
-          <span class="pill p-safe">Refused</span>
-        </div>
-        <div class="row">
-          <span class="dot d-breach"></span>
-          <span class="lang">Bengali</span>
-          <span class="req bn">একই অনুরোধ, বাংলায়</span>
-          <span class="pill p-breach">Answered</span>
-        </div>
-      </div>
-      <div class="note">Same model. Same defense. The attacker just switched language.</div>
+  <div class="stats">
+    <div class="stat">
+      <div class="cap"><span class="dot d-green"></span>English</div>
+      <div class="num g">0<span class="sep">–</span>4%</div>
     </div>
-
-    <div class="right">
-      <div class="caption">Harmful prompts answered, after a Bengali fine-tuning attack</div>
-      <div class="en-line">
-        <span class="lab">English</span>
-        <span class="en-num">0–4%</span>
-      </div>
-      <div class="bn-block">
-        <div class="bn-lab">Bengali</div>
-        <div class="bn-num">59–61%</div>
-        <div class="bn-sub">An English-only evaluation would call this robust.</div>
-      </div>
-      <div class="repair">Low-rank repair removes one weight direction and brings Bengali to <i>14%</i>.</div>
+    <div class="stat">
+      <div class="cap"><span class="dot d-red"></span>Bengali</div>
+      <div class="num r">59<span class="sep">–</span>61%</div>
     </div>
   </div>
 
-  <div class="foot">
-    <span>Lexsi AI Safety &amp; Alignment Hackathon</span>
-    <span><b>github.com/dhairya-pandya/Lexsi-AI-Alignment</b></span>
-  </div>
+  <div class="foot-cap">An English-only evaluation would call this robust. A low-rank repair brings Bengali back to <b>14%</b>.</div>
+
+  <div class="brand"><span>Tiny Aya Fire</span><span>·</span><b>github.com/dhairya-pandya/Lexsi-AI-Alignment</b></div>
 </body>
 </html>

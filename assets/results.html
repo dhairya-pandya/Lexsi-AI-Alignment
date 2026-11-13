@@ -3,203 +3,179 @@
 <head>
 <meta charset="utf-8">
 <title>Results</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ground:#0C1922; --panel:#102531; --line:#244150; --line-soft:#1b3341;
-    --safe:#46D6A4; --breach:#FF5C72; --third:#F0B24A;
-    --text:#EAF2F4; --muted:#88A4B0; --faint:#5a7482;
+    --page:#F5F5F7; --card:#FFFFFF; --hair:#E8E8ED; --grid:#EDEDF0;
+    --ink:#1D1D1F; --gray:#86868B;
+    --green:#34C759; --green-txt:#248A3D;
+    --red:#FF3B30; --red-txt:#D70015;
+    --blue:#0071E3; --slate:#AEAEB2;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{width:1120px;}
-  body{font-family:'Archivo',system-ui,sans-serif; background:var(--ground); color:var(--text);
-    -webkit-font-smoothing:antialiased; padding:56px 56px 40px;}
-  svg{display:block;} text{font-family:'Archivo',sans-serif;}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;
+    background:var(--page); color:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; padding:52px 48px 40px;}
+  svg{display:block;} text{font-family:-apple-system,"SF Pro Text","Helvetica Neue",sans-serif;}
 
-  .masthead{display:flex; justify-content:space-between; align-items:flex-end;
-    border-bottom:1px solid var(--line); padding-bottom:22px;}
-  h1{font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.05;}
-  .sub{font-size:15px; color:var(--muted); font-weight:500; margin-top:8px; max-width:62ch; line-height:1.45;}
-  .meta{font-size:12.5px; color:var(--faint); font-weight:600; text-align:right; line-height:1.6; white-space:nowrap;}
-  .meta b{color:var(--safe);}
+  header{text-align:center; margin-bottom:34px;}
+  .eyebrow{font-size:16px; font-weight:600; color:var(--blue); letter-spacing:-.01em; margin-bottom:8px;}
+  h1{font-size:40px; font-weight:700; letter-spacing:-.025em; line-height:1.06;}
+  .lede{font-size:18px; font-weight:400; color:var(--gray); letter-spacing:-.012em; line-height:1.45;
+    max-width:62ch; margin:12px auto 0;}
 
-  section{padding:34px 0 6px; border-bottom:1px solid var(--line-soft);}
-  section:last-of-type{border-bottom:0;}
-  .ix{display:flex; align-items:baseline; gap:14px;}
-  .num{font-size:15px; font-weight:800; color:var(--faint); font-variant-numeric:tabular-nums;}
-  h2{font-size:21px; font-weight:700; letter-spacing:-.01em;}
-  .read{font-size:14.5px; color:var(--muted); font-weight:500; line-height:1.5; margin:10px 0 20px; max-width:84ch;}
-  .read b{color:var(--text); font-weight:600;}
-  .read .j{color:var(--safe); font-weight:700;} .read .c{color:var(--breach); font-weight:700;}
+  .grid{display:grid; grid-template-columns:repeat(6,1fr); gap:16px;}
+  .card{background:var(--card); border-radius:22px; padding:28px 30px;}
+  .c6{grid-column:span 6;} .c3{grid-column:span 3;}
 
-  .chartcard{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px 26px;}
-  .legend{display:flex; gap:22px; margin-top:16px; font-size:13px; color:var(--muted); font-weight:600;}
+  .k{font-size:13px; font-weight:600; color:var(--blue); letter-spacing:-.005em; margin-bottom:6px;}
+  h2{font-size:23px; font-weight:700; letter-spacing:-.02em;}
+  .note{font-size:15px; font-weight:400; color:var(--gray); letter-spacing:-.01em; line-height:1.45; margin-top:8px;}
+  .note b{color:var(--ink); font-weight:600;}
+
+  /* gap card rows */
+  .gaprows{margin-top:22px; display:flex; flex-direction:column; gap:20px;}
+  .gaprow{display:grid; grid-template-columns:96px 1fr 150px; align-items:center; gap:20px;}
+  .lbl{display:flex; align-items:center; gap:9px; font-size:16px; font-weight:500; color:var(--ink);}
+  .dot{width:10px; height:10px; border-radius:50%;}
+  .dg{background:var(--green);} .dr{background:var(--red);}
+  .track{height:30px; background:var(--grid); border-radius:8px; position:relative; overflow:hidden;}
+  .fill{position:absolute; left:0; top:0; bottom:0; border-radius:8px;}
+  .fg{background:var(--green);} .fr{background:var(--red);}
+  .val{font-size:34px; font-weight:700; letter-spacing:-.02em; text-align:right; font-variant-numeric:tabular-nums;}
+  .vg{color:var(--green-txt);} .vr{color:var(--red-txt);}
+  .val .sep{font-size:.5em; font-weight:500; vertical-align:.2em; margin:0 .03em;}
+  .scale{display:grid; grid-template-columns:96px 1fr 150px; margin-top:12px;}
+  .scale .ticks{grid-column:2; display:flex; justify-content:space-between; font-size:12px; color:var(--slate); font-weight:500;}
+
+  /* big stat card */
+  .stat-big{font-size:72px; font-weight:700; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; margin-top:14px;}
+  .stat-sub{font-size:15px; color:var(--gray); font-weight:400; margin-top:10px; letter-spacing:-.01em; line-height:1.45;}
+  .stat-sub b{color:var(--ink); font-weight:600;}
+  .pills{display:flex; gap:8px; margin-top:16px;}
+  .pill{font-size:13px; font-weight:600; padding:5px 12px; border-radius:999px; background:#EAF7EE; color:var(--green-txt);}
+
+  .legend{display:flex; gap:22px; margin-top:16px; font-size:14px; color:var(--gray); font-weight:500;}
   .legend span{display:flex; align-items:center; gap:8px;}
-  .sw{width:14px; height:4px; border-radius:2px;}
-  .sw.band{height:12px; opacity:.22;}
-  .cap{font-size:13px; color:var(--muted); font-weight:500; margin-top:14px; line-height:1.45;}
-  .cap b{color:var(--third); font-weight:700;}
+  .sw{width:16px; height:4px; border-radius:2px;} .sw.band{height:12px; opacity:.5;}
 
-  .foot{margin-top:28px; display:flex; justify-content:space-between;
-    font-size:12.5px; color:var(--faint); font-weight:500;}
-  .foot b{color:var(--text); font-weight:700;}
+  footer{margin-top:26px; display:flex; justify-content:space-between; font-size:13px; color:var(--gray); letter-spacing:-.005em;}
+  footer b{color:var(--ink); font-weight:600;}
 </style>
 </head>
 <body>
-  <div class="masthead">
-    <div>
-      <h1>The gap, and the repair</h1>
-      <div class="sub">What an English-only evaluation misses on Tiny Aya Fire, and the post-hoc fix. Every harm number is a HarmBench / Qwen3Guard unsafe rate with a 95% bootstrap CI; one seed.</div>
-    </div>
-    <div class="meta">Model <b>tiny-aya-fire</b><br>Attack: Bengali SFT, p=0.2<br>n = 208 (en) · 120 (bn)</div>
-  </div>
+  <header>
+    <div class="eyebrow">Results</div>
+    <h1>The gap, and the repair</h1>
+    <div class="lede">What an English-only evaluation misses on Tiny Aya Fire, and the post-hoc fix. Harm is a HarmBench / Qwen3Guard unsafe rate; 95% bootstrap CIs, one seed.</div>
+  </header>
 
-  <!-- PANEL 1 -->
-  <section>
-    <div class="ix"><span class="num">01</span><h2>Same model, two readings</h2></div>
-    <div class="read">A defended model, after a Bengali fine-tuning attack. In English it refuses almost everything; in Bengali it answers most harmful prompts. <b>An English-only eval reports only the left bar.</b></div>
-    <div class="chartcard">
-      <svg viewBox="0 0 1016 196" width="1016" height="196" role="img" aria-label="English 0 to 4 percent harm versus Bengali 59 to 61 percent">
-        <!-- track + scale -->
-        <line x1="210" y1="26" x2="210" y2="170" stroke="#244150" stroke-width="1"/>
-        <!-- gridlines -->
-        <g stroke="#1b3341" stroke-width="1">
-          <line x1="210" y1="26" x2="210" y2="170"/>
-          <line x1="402" y1="26" x2="402" y2="170"/>
-          <line x1="594" y1="26" x2="594" y2="170"/>
-          <line x1="786" y1="26" x2="786" y2="170"/>
-          <line x1="978" y1="26" x2="978" y2="170"/>
-        </g>
-        <g fill="#5a7482" font-size="12" font-weight="600" text-anchor="middle">
-          <text x="210" y="188">0</text><text x="402" y="188">25%</text>
-          <text x="594" y="188">50%</text><text x="786" y="188">75%</text><text x="978" y="188">100%</text>
-        </g>
-        <!-- English bar (0-4%, mid 2% => width = .02*768=15.4) -->
-        <g>
-          <circle cx="40" cy="58" r="6" fill="#46D6A4"/>
-          <text x="58" y="63" fill="#EAF2F4" font-size="16" font-weight="600">English</text>
-          <rect x="210" y="44" width="31" height="30" rx="4" fill="#46D6A4"/>
-          <text x="254" y="64" fill="#46D6A4" font-size="18" font-weight="800">0–4%</text>
-        </g>
-        <!-- Bengali bar (59-61%, mid 60% => width .60*768=461) -->
-        <g>
-          <circle cx="40" cy="122" r="6" fill="#FF5C72"/>
-          <text x="58" y="127" fill="#EAF2F4" font-size="16" font-weight="600">Bengali</text>
-          <rect x="210" y="108" width="461" height="30" rx="4" fill="#FF5C72"/>
-          <text x="686" y="128" fill="#FF5C72" font-size="18" font-weight="800">59–61%</text>
-        </g>
-      </svg>
+  <div class="grid">
+    <!-- HERO: the gap -->
+    <div class="card c6">
+      <div class="k">The finding</div>
+      <h2>Same model, two readings</h2>
+      <div class="note">A defended model, after a Bengali fine-tuning attack. <b>An English-only eval reports only the top bar.</b></div>
+      <div class="gaprows">
+        <div class="gaprow">
+          <div class="lbl"><span class="dot dg"></span>English</div>
+          <div class="track"><div class="fill fg" style="width:4%"></div></div>
+          <div class="val vg">0<span class="sep">–</span>4%</div>
+        </div>
+        <div class="gaprow">
+          <div class="lbl"><span class="dot dr"></span>Bengali</div>
+          <div class="track"><div class="fill fr" style="width:60%"></div></div>
+          <div class="val vr">59<span class="sep">–</span>61%</div>
+        </div>
+      </div>
+      <div class="scale"><div class="ticks"><span>0</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div></div>
     </div>
-  </section>
 
-  <!-- PANEL 2 -->
-  <section>
-    <div class="ix"><span class="num">02</span><h2>The repair: remove the attack's top weight directions</h2></div>
-    <div class="read">The attack's weight change <b>dW = W_post − W_base</b> is nearly rank-1. Removing the top-k singular directions per attention/MLP matrix strips the harmful write and keeps the diffuse benign gain. <span class="c">Bengali harm</span> falls from 50% to 14% at the first direction; <span class="j">English harm</span> is already low.</div>
-    <div class="chartcard">
-      <svg viewBox="0 0 1016 360" width="1016" height="360" role="img" aria-label="Bengali and English harm versus directions removed">
-        <!-- gridlines + y labels: y=300 (0%), 220 (20), 140 (40), 60 (60) -->
-        <g stroke="#1b3341" stroke-width="1">
-          <line x1="70" y1="300" x2="1000" y2="300"/>
-          <line x1="70" y1="220" x2="1000" y2="220"/>
-          <line x1="70" y1="140" x2="1000" y2="140"/>
-          <line x1="70" y1="60"  x2="1000" y2="60"/>
+    <!-- WIDE: the repair line chart -->
+    <div class="card c6">
+      <div class="k">The repair</div>
+      <h2>Remove the attack's top weight directions</h2>
+      <div class="note">The attack's weight change <b>dW = W_post − W_base</b> is nearly rank-1. Stripping the top-k singular directions per matrix removes the harmful write and keeps the diffuse benign gain.</div>
+      <svg viewBox="0 0 1000 322" width="1000" height="322" style="margin-top:14px" role="img" aria-label="Bengali and English harm versus directions removed">
+        <g stroke="#EDEDF0" stroke-width="1">
+          <line x1="64" y1="280" x2="960" y2="280"/>
+          <line x1="64" y1="206.2" x2="960" y2="206.2"/>
+          <line x1="64" y1="132.3" x2="960" y2="132.3"/>
+          <line x1="64" y1="58.5" x2="960" y2="58.5"/>
         </g>
-        <g fill="#5a7482" font-size="12" font-weight="600" text-anchor="end">
-          <text x="58" y="304">0</text><text x="58" y="224">20%</text>
-          <text x="58" y="144">40%</text><text x="58" y="64">60%</text>
+        <g fill="#AEAEB2" font-size="12.5" font-weight="500" text-anchor="end">
+          <text x="52" y="284">0</text><text x="52" y="210">20%</text><text x="52" y="136">40%</text><text x="52" y="62">60%</text>
         </g>
-        <!-- CI band (coral, bn) -->
-        <polygon points="70,68 302.5,216 535,216 767.5,232 1000,248 1000,284 767.5,276 535,268 302.5,264 70,132"
-                 fill="#FF5C72" opacity="0.18"/>
-        <!-- bn harm line -->
-        <polyline points="70,100 302.5,244 535,244 767.5,256 1000,268" fill="none" stroke="#FF5C72" stroke-width="3"/>
-        <!-- en harm line -->
-        <polyline points="70,224 302.5,292 535,292 767.5,296 1000,296" fill="none" stroke="#46D6A4" stroke-width="2.5"/>
-        <!-- points -->
-        <g fill="#FF5C72">
-          <circle cx="70" cy="100" r="5.5"/><circle cx="302.5" cy="244" r="5.5"/><circle cx="535" cy="244" r="5.5"/><circle cx="767.5" cy="256" r="5.5"/><circle cx="1000" cy="268" r="5.5"/>
+        <polygon points="64,66 288,202.5 512,202.5 736,217.2 960,232 960,265.2 736,258 512,250.5 288,246.8 64,125"
+                 fill="#FF3B30" opacity="0.10"/>
+        <polyline points="64,95.4 288,228.3 512,228.3 736,239.4 960,250.5" fill="none" stroke="#FF3B30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="64,209.8 288,272.6 512,272.6 736,276.3 960,276.3" fill="none" stroke="#34C759" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <g fill="#FF3B30"><circle cx="64" cy="95.4" r="5.5"/><circle cx="288" cy="228.3" r="5.5"/><circle cx="512" cy="228.3" r="5.5"/><circle cx="736" cy="239.4" r="5.5"/><circle cx="960" cy="250.5" r="5.5"/></g>
+        <g fill="#34C759"><circle cx="64" cy="209.8" r="4.5"/><circle cx="288" cy="272.6" r="4.5"/><circle cx="512" cy="272.6" r="4.5"/><circle cx="736" cy="276.3" r="4.5"/><circle cx="960" cy="276.3" r="4.5"/></g>
+        <g fill="#D70015" font-size="14" font-weight="700" text-anchor="middle">
+          <text x="64" y="82">50%</text><text x="288" y="216">14%</text><text x="736" y="227">11%</text><text x="960" y="238">8%</text>
         </g>
-        <g fill="#46D6A4">
-          <circle cx="70" cy="224" r="4.5"/><circle cx="302.5" cy="292" r="4.5"/><circle cx="535" cy="292" r="4.5"/><circle cx="767.5" cy="296" r="4.5"/><circle cx="1000" cy="296" r="4.5"/>
+        <g fill="#86868B" font-size="13.5" font-weight="600" text-anchor="middle">
+          <text x="64" y="306">k=0</text><text x="288" y="306">k=1</text><text x="512" y="306">k=2</text><text x="736" y="306">k=4</text><text x="960" y="306">k=8</text>
         </g>
-        <!-- value labels on bn -->
-        <g fill="#FF5C72" font-size="13" font-weight="800" text-anchor="middle">
-          <text x="70" y="88">50%</text><text x="302.5" y="232">14%</text><text x="767.5" y="244">11%</text><text x="1000" y="256">8%</text>
-        </g>
-        <!-- knee annotation -->
-        <line x1="302.5" y1="130" x2="302.5" y2="226" stroke="#F0B24A" stroke-width="1.5" stroke-dasharray="4 4"/>
-        <text x="314" y="126" fill="#F0B24A" font-size="13" font-weight="700">one direction: 50% to 14%</text>
-        <!-- x labels -->
-        <g fill="#88A4B0" font-size="13" font-weight="700" text-anchor="middle">
-          <text x="70" y="326">k=0</text><text x="302.5" y="326">k=1</text><text x="535" y="326">k=2</text><text x="767.5" y="326">k=4</text><text x="1000" y="326">k=8</text>
-        </g>
-        <text x="535" y="350" fill="#5a7482" font-size="12" font-weight="600" text-anchor="middle">singular directions of dW removed, per weight matrix</text>
       </svg>
       <div class="legend">
-        <span><span class="sw" style="background:#FF5C72"></span>Bengali harm</span>
-        <span><span class="sw" style="background:#46D6A4"></span>English harm</span>
-        <span><span class="sw band" style="background:#FF5C72"></span>95% CI</span>
+        <span><span class="sw" style="background:#FF3B30"></span>Bengali harm</span>
+        <span><span class="sw" style="background:#34C759"></span>English harm</span>
+        <span><span class="sw band" style="background:#FF3B30"></span>95% CI</span>
+        <span style="margin-left:auto;color:#AEAEB2;">singular directions of dW removed, per weight matrix</span>
       </div>
-      <div class="cap"><b>Capability holds.</b> MMLU is 0.55 before the repair and 0.56 at k=1 (0.50–0.58 across all k) — the fix is not degeneration. Over-refusal rises modestly, 5% to 16%.</div>
     </div>
-  </section>
 
-  <!-- PANEL 3 -->
-  <section>
-    <div class="ix"><span class="num">03</span><h2>Prevention does not work — repair does</h2></div>
-    <div class="read">The training-time alternative: anchor the refusal subspace during fine-tuning so the attack cannot land. <b>It fails.</b> Anchoring the English direction leaves <span class="c">Bengali harm</span> unchanged; anchoring all three languages makes it worse.</div>
-    <div class="chartcard">
-      <svg viewBox="0 0 1016 230" width="1016" height="230" role="img" aria-label="Bengali harm for no anchor, English anchor, union anchor">
-        <!-- scale 0..0.45 over x 250..1010 (width 760) -->
-        <g stroke="#1b3341" stroke-width="1">
-          <line x1="250" y1="20" x2="250" y2="175"/>
-          <line x1="419" y1="20" x2="419" y2="175"/>
-          <line x1="588" y1="20" x2="588" y2="175"/>
-          <line x1="757" y1="20" x2="757" y2="175"/>
-          <line x1="926" y1="20" x2="926" y2="175"/>
+    <!-- capability -->
+    <div class="card c3">
+      <div class="k">Capability</div>
+      <h2>The fix is not degeneration</h2>
+      <div class="stat-big" style="color:var(--ink)">0.56</div>
+      <div class="stat-sub">MMLU at the repair (<b>0.55</b> before, 0.50–0.58 across all k). Over-refusal rises modestly, 5% to 16%.</div>
+      <div class="pills"><span class="pill">capability preserved</span></div>
+    </div>
+
+    <!-- prevention failed -->
+    <div class="card c3">
+      <div class="k">The counterpart test</div>
+      <h2>Prevention does not work</h2>
+      <div class="note" style="margin-bottom:4px">Anchoring the refusal subspace during fine-tuning. Bengali harm after the attack:</div>
+      <svg viewBox="0 0 470 176" width="470" height="176" role="img" aria-label="Bengali harm for no anchor, English anchor, union anchor">
+        <!-- scale 0..0.40 over x 150..440 (width 290) -->
+        <g stroke="#EDEDF0" stroke-width="1">
+          <line x1="150" y1="6" x2="150" y2="150"/><line x1="222.5" y1="6" x2="222.5" y2="150"/>
+          <line x1="295" y1="6" x2="295" y2="150"/><line x1="367.5" y1="6" x2="367.5" y2="150"/><line x1="440" y1="6" x2="440" y2="150"/>
         </g>
-        <g fill="#5a7482" font-size="12" font-weight="600" text-anchor="middle">
-          <text x="250" y="193">0</text><text x="419" y="193">10%</text><text x="588" y="193">20%</text><text x="757" y="193">30%</text><text x="926" y="193">40%</text>
+        <g fill="#AEAEB2" font-size="11.5" font-weight="500" text-anchor="middle">
+          <text x="150" y="168">0</text><text x="222.5" y="168">10%</text><text x="295" y="168">20%</text><text x="367.5" y="168">30%</text><text x="440" y="168">40%</text>
         </g>
-        <!-- none .22 => width .22/.45*760=372 ; y row 44 -->
+        <!-- none .22 => width .22/.40*290=159.5 -->
         <g>
-          <text x="236" y="50" fill="#EAF2F4" font-size="15" font-weight="600" text-anchor="end">no anchor</text>
-          <rect x="250" y="32" width="372" height="26" rx="4" fill="#6f8a98"/>
-          <line x1="503" y1="45" x2="740" y2="45" stroke="#cdd9df" stroke-width="2"/>
-          <line x1="503" y1="39" x2="503" y2="51" stroke="#cdd9df" stroke-width="2"/>
-          <line x1="740" y1="39" x2="740" y2="51" stroke="#cdd9df" stroke-width="2"/>
-          <text x="752" y="51" fill="#EAF2F4" font-size="15" font-weight="800">0.22</text>
+          <text x="140" y="29" fill="#1D1D1F" font-size="13.5" font-weight="500" text-anchor="end">no anchor</text>
+          <rect x="150" y="12" width="159.5" height="22" rx="6" fill="#AEAEB2"/>
+          <text x="319" y="30" fill="#1D1D1F" font-size="14" font-weight="700">0.22</text>
         </g>
-        <!-- en .22 => 372 ; y row 92 -->
+        <!-- en .22 -->
         <g>
-          <text x="236" y="98" fill="#EAF2F4" font-size="15" font-weight="600" text-anchor="end">anchor English</text>
-          <rect x="250" y="80" width="372" height="26" rx="4" fill="#46D6A4"/>
-          <line x1="503" y1="93" x2="740" y2="93" stroke="#cdd9df" stroke-width="2"/>
-          <line x1="503" y1="87" x2="503" y2="99" stroke="#cdd9df" stroke-width="2"/>
-          <line x1="740" y1="87" x2="740" y2="99" stroke="#cdd9df" stroke-width="2"/>
-          <text x="752" y="99" fill="#EAF2F4" font-size="15" font-weight="800">0.22</text>
+          <text x="140" y="73" fill="#1D1D1F" font-size="13.5" font-weight="500" text-anchor="end">anchor en</text>
+          <rect x="150" y="56" width="159.5" height="22" rx="6" fill="#34C759"/>
+          <text x="319" y="74" fill="#1D1D1F" font-size="14" font-weight="700">0.22</text>
         </g>
-        <!-- union .33 => .33/.45*760=557 ; y row 140 -->
+        <!-- union .33 => .33/.40*290=239.25 -->
         <g>
-          <text x="236" y="146" fill="#EAF2F4" font-size="15" font-weight="600" text-anchor="end">anchor en + bn + hi</text>
-          <rect x="250" y="128" width="557" height="26" rx="4" fill="#FF5C72"/>
-          <line x1="672" y1="141" x2="959" y2="141" stroke="#cdd9df" stroke-width="2"/>
-          <line x1="672" y1="135" x2="672" y2="147" stroke="#cdd9df" stroke-width="2"/>
-          <line x1="959" y1="135" x2="959" y2="147" stroke="#cdd9df" stroke-width="2"/>
-          <text x="968" y="147" fill="#FF5C72" font-size="15" font-weight="800">0.33</text>
+          <text x="140" y="117" fill="#1D1D1F" font-size="13.5" font-weight="500" text-anchor="end">anchor en+bn+hi</text>
+          <rect x="150" y="100" width="239.25" height="22" rx="6" fill="#FF3B30"/>
+          <text x="398" y="118" fill="#D70015" font-size="14" font-weight="700">0.33</text>
         </g>
-        <text x="630" y="222" fill="#5a7482" font-size="12" font-weight="600" text-anchor="middle">Bengali harm after the attack (lower is better) · whiskers are 95% CI</text>
       </svg>
-      <div class="cap">Over-constraining along machine-translated non-English refusal directions appears to fight the task objective. The post-hoc repair in panel 02 is what closes the gap.</div>
+      <div class="note"><b>Repair beats prevention.</b> English anchoring changes nothing; the union is worse.</div>
     </div>
-  </section>
-
-  <div class="foot">
-    <span>Judges: HarmBench-Mistral-7b, Qwen3Guard-Gen-4B · prompts: StrongREJECT, MultiJail · translation: NLLB-200</span>
-    <span><b>github.com/dhairya-pandya/Lexsi-AI-Alignment</b></span>
   </div>
+
+  <footer>
+    <span>Judges: HarmBench-Mistral-7b, Qwen3Guard-Gen-4B · prompts: StrongREJECT, MultiJail · translation: NLLB-200</span>
+    <b>github.com/dhairya-pandya/Lexsi-AI-Alignment</b>
+  </footer>
 </body>
 </html>
