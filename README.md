@@ -2,6 +2,11 @@
 
 ![One model, two verdicts: English harm 0–4%, Bengali harm 59–61% after a Bengali fine-tuning attack](assets/banner.png)
 
+<p align="center">
+  <b><a href="https://getalife-lexsi-study.vercel.app">Live demo and interactive results →</a></b><br>
+  <sub>the finding, every experiment, the low-rank repair, and the animated walkthrough</sub>
+</p>
+
 Safety defenses that model providers apply during customer fine-tuning are built and tested almost entirely in English. We asked a simple question nobody had checked: if the attacker's poisoned fine-tuning data is in **Bengali** instead of English, do those defenses still hold, and do they hold *for Bengali*?
 
 They don't.
