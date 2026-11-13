@@ -1,6 +1,6 @@
 # Does Safety Survive an Attack in Another Language? Cross-Lingual Tamper Resistance of Fine-Tuning Defenses
 
-> **Note:** every number carries a 95% CI and its over-refusal.
+> **Live demo:** https://getalife-lexsi-study.vercel.app · every number carries a 95% CI and its over-refusal.
 
 ## 1. Problem and approach
 Model providers that offer fine-tuning-as-a-service apply safety defenses (Lisa, Vaccine, Booster, RepNoise) to stop a customer's fine-tune from stripping safety, but those defenses are built and evaluated almost entirely in **English**. We ask the question the literature skipped: if the attacker's poisoned fine-tuning data is in **Hindi or Bengali**, do the defenses still hold, and do they hold *in those languages*?
@@ -19,16 +19,20 @@ We arrived here from a negative result. Our first question was whether Tiny Aya'
 CohereLabs/tiny-aya-global, tiny-aya-fire (CC-BY-NC-4.0 + Cohere acceptable-use addendum); CohereLabs/aya-expanse-8b (CC-BY-NC-4.0) as the architectural control. Judges: cais/HarmBench-Mistral-7b-val-cls, Qwen/Qwen3Guard-Gen-4B.
 
 ## 4. Datasets, benchmarks and licenses
-See `DATA_LICENSES.md`: StrongREJECT (MIT), MultiJail (MIT), XSTest (CC-BY-4.0), OR-Bench-Hard (CC-BY-4.0), MMLU (MIT), UltraChat (MIT), WikiText-103 (CC-BY-SA-3.0), Magikarp report (Apache-2.0).
+Datasets and benchmarks: StrongREJECT (MIT), MultiJail (MIT), XSTest (CC-BY-4.0), OR-Bench-Hard (CC-BY-4.0), MMLU (MIT), UltraChat (MIT), WikiText-103 (CC-BY-SA-3.0), Magikarp report (Apache-2.0).
 
 ## 5. Model artifacts (HF collection)
-Repaired checkpoint (Experiment A, k=1 low-rank projection of a Bengali-attacked Tiny Aya Fire), gated:
+**Collection:** https://huggingface.co/collections/dhairyapandya/cross-lingual-tamper-resistance-models-6af769175d8792224c4e9a03
+
+Repaired checkpoint (Experiment A, k=1 low-rank projection of a Bengali-attacked Tiny Aya Fire), public:
 https://huggingface.co/codingpanda06/tiny-aya-fire-bn-repaired_k1
 
 ## 6. Data artifacts (HF collection)
-Two-tier evaluation dataset:
-- Public (redacted): https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals
-- Gated (full completions): https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals-gated
+**Collection:** https://huggingface.co/collections/dhairyapandya/cross-lingual-tamper-resistance-data-6af76916237237008742051b
+
+Two-tier evaluation dataset (both public):
+- Redacted tier: https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals
+- Full completions: https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals-gated
 
 Public tier redacts every completion to a harmful prompt that is not a clear refusal (robust to judge error);
 benign answers, refusals and all labels are kept. 47,034 rows per tier, 0 harmful completions in the public tier.
@@ -58,7 +62,7 @@ Tiny Aya's chat template always injects a 359-token "contextual safety mode" pre
   - **No defense** is the baseline.
 - Harm is the HarmBench-classifier unsafe rate on StrongREJECT (English, n=208) and on MultiJail Bengali prompts (n=120), with 95% bootstrap CIs.
 - We also report over-refusal (XSTest + OR-Bench, n=280), MMLU, and the degenerate-output rate.
-- Full table: `article/tamper_results.csv`. Figure: `article/figures/tamper_harm_heatmap.png`.
+- Full numbers are in the tables below; figures and the animated walkthrough are on the live demo.
 
 **Findings.**
 1. **Attacks are language-local.**
@@ -115,7 +119,7 @@ Bengali harm falls only 0.57 -> ~0.46 (overlapping CIs, a weak effect) while Eng
 | 4 | 0.01 [.00,.02] | 0.11 [.06,.17] | 0.18 | 0.52 |
 | 8 | 0.01 [.00,.02] | 0.08 [.04,.13] | 0.20 | 0.50 |
 
-Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 14%** (non-overlapping CIs) and English harm 19% -> 2%, **with MMLU preserved** (0.55 -> 0.56): the harmful write is nearly rank-1 and concentrated, while the benign fine-tune gain is diffuse and survives. k=1-2 is the knee; k=4-8 push Bengali harm to 8% at the cost of more over-refusal and lower MMLU. Not a degeneration artifact (MMLU and coherence hold at every k). Figure: `results/proj/pareto.png`.
+Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 14%** (non-overlapping CIs) and English harm 19% -> 2%, **with MMLU preserved** (0.55 -> 0.56): the harmful write is nearly rank-1 and concentrated, while the benign fine-tune gain is diffuse and survives. k=1-2 is the knee; k=4-8 push Bengali harm to 8% at the cost of more over-refusal and lower MMLU. Not a degeneration artifact (MMLU and coherence hold at every k).
 
 **Prevention does not work; repair does (the counterpart test).** The obvious training-*time* alternative to post-hoc repair is to stop the write from landing: anchor the hidden state to the refusal subspace during the fine-tune (ProCon / C-ΔΘ, 2602.04521). We implemented a single-model projection constraint: measure the base model's refusal-subspace "budget" on harmful prompts, then penalize any harmful/refusal example whose last-token hidden state (layer 16) projects below that budget along the anchored directions, and ran three arms against the Bengali attack (balanced English safety set, 1 seed):
 
@@ -125,7 +129,7 @@ Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 
 | anchor span{r_en} | 0.00 | **0.22 [.15,.29]** | 0.60 | 0.50 |
 | anchor span{r_en,r_bn,r_hi} | 0.01 | **0.33 [.25,.42]** | 0.60 | 0.50 |
 
-(Figure: `results/anchor/bars.png`.) Anchoring the English refusal direction changes Bengali harm *not at all* (0.22, identical to the control), and anchoring all three languages makes it *worse* (0.33), the opposite of the intent, plausibly because the non-English refusal directions, estimated from machine-translated prompts, are noisy and over-constraining along them fights the task objective. So **prevention failed and repair won**.
+Anchoring the English refusal direction changes Bengali harm *not at all* (0.22, identical to the control), and anchoring all three languages makes it *worse* (0.33), the opposite of the intent, plausibly because the non-English refusal directions, estimated from machine-translated prompts, are noisy and over-constraining along them fights the task objective. So **prevention failed and repair won**.
 
 **Overall for defenses:** benign twins cleanly fix over-refusal and capability loss but do **not** close the language gap; balanced English data, 50% target-language data, pilot GRPO, and **training-time union-subspace anchoring** also fail to close it (the attack overwrites or outruns the added safety). What *does* close it is **low-rank update projection**: removing the attack's top-1-2 `dW` singular directions restores multilingual safety while preserving capability. So the cross-lingual tamper gap, while real and invisible to English-only evaluation, is **repairable post-hoc** because the harmful update is low-rank; repair beats prevention.
 
@@ -133,8 +137,11 @@ Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 
 
 **Takeaway.** Tamper-resistance claims for multilingual models need (a) evaluation in the attacker's language, (b) over-refusal and output-quality metrics next to harm, and (c) an audit of what the "safety" data actually contains.
 ### Deployment surfaces
-`results/e0/deployment_surfaces.csv`: the preamble is present in HF/vLLM chat and the official GGUF, absent in raw completion APIs and an Ollama build without a template.
+The preamble is present in HF/vLLM chat and the official GGUF, absent in raw completion APIs and an Ollama build without a template.
 ### What else we tried
+- **Upstream report to SafeTune.** Its default refusal auxiliary set is built from BeaverTails `is_safe` responses, but only 8% (21/256) are actual refusals; hardening on it teaches compliance and makes the *unattacked* model unsafe (Booster 59%, Vaccine 24%). We documented this and raised it with the SafeTune team.
+- **GRPO safety hardening** (AlignTune/TRL): null at pilot scale (see above).
+- **Refusal-direction drift as a monitor:** too weak a proxy to act on (see above).
 
 ## 8. With more credits
 
