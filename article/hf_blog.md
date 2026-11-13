@@ -2,7 +2,7 @@
 
 ![One model, two verdicts: English harm 0 to 4 percent, Bengali harm 59 to 61 percent after a Bengali fine-tuning attack](https://huggingface.co/datasets/dhairyapandya/cross-lingual-tamper-assets/resolve/main/banner.png)
 
-*A hackathon project on cross-lingual tamper resistance of fine-tuning-stage safety defenses. Live demo with every chart and an animated walkthrough: [getalife-lexsi-study.vercel.app](https://getalife-lexsi-study.vercel.app). Every number below carries a 95% confidence interval and its over-refusal.*
+*A hackathon project on cross-lingual tamper resistance of fine-tuning-stage safety defenses. Full paper (PDF): [cross-lingual-tamper-resistance.pdf](https://huggingface.co/datasets/dhairyapandya/cross-lingual-tamper-resistance/resolve/main/cross-lingual-tamper-resistance.pdf). Live demo with every chart and an animated walkthrough: [getalife-lexsi-study.vercel.app](https://getalife-lexsi-study.vercel.app). Every number below carries a 95% confidence interval and its over-refusal.*
 
 ## The game we were playing
 
@@ -71,6 +71,8 @@ What is new here is the combination, not a new primitive. We bring low-rank post
 ## The artifacts, models, and licenses
 
 Everything is public.
+
+- **Paper (PDF):** [cross-lingual-tamper-resistance.pdf](https://huggingface.co/datasets/dhairyapandya/cross-lingual-tamper-resistance/resolve/main/cross-lingual-tamper-resistance.pdf), the two-column writeup with the pipeline and mechanism figures.
 
 - **Model artifacts (HF collection):** [cross-lingual-tamper-resistance-models](https://huggingface.co/collections/dhairyapandya/cross-lingual-tamper-resistance-models-6af769175d8792224c4e9a03). The repaired checkpoint is the k=1 projection of a Bengali-attacked Tiny Aya Fire: [tiny-aya-fire-bn-repaired_k1](https://huggingface.co/codingpanda06/tiny-aya-fire-bn-repaired_k1).
 - **Data artifacts (HF collection):** [cross-lingual-tamper-resistance-data](https://huggingface.co/collections/dhairyapandya/cross-lingual-tamper-resistance-data-6af76916237237008742051b). Two tiers of the evaluation set: a [redacted tier](https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals) that replaces every non-refusal completion to a harmful prompt with a placeholder while keeping all labels, and a [full tier](https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals-gated) for safety research.
