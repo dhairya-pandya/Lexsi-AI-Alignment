@@ -1,15 +1,19 @@
-# Where Does Tiny Aya's Safety Live? The Preamble, the 4K Horizon, and Why Steering Fails
+# Does Safety Survive an Attack in Another Language? Cross-Lingual Tamper Resistance of Fine-Tuning Defenses
 
-> Results sections are filled in from `results/` after the runs. Every number comes with a 95% CI and its over-refusal.
+> **Code & this writeup:** https://github.com/dhairya-pandya/Lexsi-AI-Alignment · every number carries a 95% CI and its over-refusal.
 
 ## 1. Problem and approach
-Tiny Aya's chat template always injects a 359-token "contextual safety mode" preamble, and 27 of its 36 layers only see the last 4,096 tokens. We measure how much refusal behaviour comes from that preamble (E1), whether it fades past the sliding window (E2), where it acts (E3), whether it explains weak refusal steering (E4), and restore its refusals without it (E5).
+Model providers that offer fine-tuning-as-a-service apply safety defenses (Lisa, Vaccine, Booster, RepNoise) to stop a customer's fine-tune from stripping safety — but those defenses are built and evaluated almost entirely in **English**. We ask the question the literature skipped: if the attacker's poisoned fine-tuning data is in **Hindi or Bengali**, do the defenses still hold, and do they hold *in those languages*?
+
+They do not. A defended Tiny Aya Fire, attacked in Bengali, refuses almost all harmful **English** prompts (0–4% harm) while answering **59–61%** of harmful **Bengali** ones — a gap an English-only evaluation certifies as robust. We trace the damage to a **low-rank weight write** and show it is **repairable post-hoc**: removing the top 1–2 singular directions of the attack's `dW` drops Bengali harm 50%→14% with capability preserved. A training-time prevention variant (subspace anchoring) does **not** work — repair beats prevention.
+
+We arrived here from a negative result. Our first question was whether Tiny Aya's refusals live in its always-injected 359-token safety preamble; they do not (§7, G1/G2) — safety is in the weights, which is exactly what makes the tamper question the interesting one.
 
 ## 2. Hackathon repos used
-- **SafeTune**: refusal-direction cross-check, judges.
-- **CircuitKIT**: EAP-IG circuit for the preamble contrast (clean = P-default, corrupt = P-none).
-- **CuratorKIT**: MinHash deduplication of prompt sets and filler pools.
-- **AuditKIT**: capability comparison before/after the fix.
+- **SafeTune**: the fine-tuning-stage defenses under test, refusal-direction extraction, judges.
+- **AlignTune**: the GRPO pilot (null result, §7).
+- **CircuitKIT / nnsight**: mechanism — refusal-direction drift and the low-rank `dW` analysis.
+- **NLLB-200-distilled-600M**: translating the attack and safety data into Hindi/Bengali.
 
 ## 3. Models and licenses
 CohereLabs/tiny-aya-global, tiny-aya-fire (CC-BY-NC-4.0 + Cohere acceptable-use addendum); CohereLabs/aya-expanse-8b (CC-BY-NC-4.0) as the architectural control. Judges: cais/HarmBench-Mistral-7b-val-cls, Qwen/Qwen3Guard-Gen-4B.
