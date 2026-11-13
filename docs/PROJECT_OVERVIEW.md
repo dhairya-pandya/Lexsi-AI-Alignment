@@ -101,7 +101,7 @@ Figure: `results/proj/pareto.png` (Bengali harm vs over-refusal vs MMLU across k
 **Caveats:** 1 seed, 1 model; over-refusal rises 5% → 16% at k=2 (the benign-twin fix addresses this); the k=0 control here is an undefended bn-attack (0.50), slightly below the defended-model headline (0.59–0.61).
 
 ### 3.4 Experiment B, union-subspace anchoring (tamper-prevention): NEGATIVE
-The training-time counterpart to A: instead of repairing the attack afterward, try to stop it landing. A ProCon / C-ΔΘ projection constraint (2602.04521), made single-model so it fits one GPU: before the fine-tune, measure the base model's mean projection of harmful prompts onto each refusal direction (the "refusal budget"); during the bn fine-tune, add a hinge penalty whenever a harmful/refusal example's last-token hidden state (unit-normalized, layer 16) projects **below** that budget along any anchored direction. Three arms, one balanced English safety set (50% real refusals + benign twins), 1 seed:
+The training-time counterpart to A: instead of repairing the attack afterward, try to stop it landing. A ProCon projection constraint (2509.06795), made single-model so it fits one GPU: before the fine-tune, measure the base model's mean projection of harmful prompts onto each refusal direction (the "refusal budget"); during the bn fine-tune, add a hinge penalty whenever a harmful/refusal example's last-token hidden state (unit-normalized, layer 16) projects **below** that budget along any anchored direction. Three arms, one balanced English safety set (50% real refusals + benign twins), 1 seed:
 
 | arm | en harm (StrongREJECT) | **bn harm (MultiJail)** | en harm (MJ) | over-refusal | MMLU |
 |---|---|---|---|---|---|
@@ -163,7 +163,7 @@ Figure: `results/anchor/bars.png` (Bengali harm by arm with CIs).
 ---
 
 ## 6. Key references
-Poppi 2410.18210 · TamperBench 2602.06911 · Qwen3Guard 2510.14276 · WildJailbreak 2406.18510 · FalseReject 2505.08054 · Deng 2310.06474 · Lee 2610.00320 (low-rank safety removal, basis of Experiment A) · C-ΔΘ 2602.04521 (subspace anchoring, basis of Experiment B) · BanglaSafe 2608.22335
+Poppi 2410.18210 · TamperBench 2602.06911 · Qwen3Guard 2510.14276 · WildJailbreak 2406.18510 · FalseReject 2505.08054 · Deng 2310.06474 · Lee 2610.00320 (low-rank safety removal, basis of Experiment A) · ProCon 2509.06795 (projection-constraint anchoring, basis of Experiment B) · BanglaSafe 2608.22335
 
 ## 7. Where things live
 - Design + plans: `docs/superpowers/specs/`, `docs/superpowers/plans/`

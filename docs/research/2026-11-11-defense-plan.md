@@ -58,4 +58,4 @@ Best-supported hypothesis: **harm detection is language-shared, refusal executio
 **Highest insight-per-dollar:** T2a + T2c (~$6, reuse saved checkpoints): likely explain the whole phenomenon. **Highest publication value:** T0a + T0b (close the validity/scoop risk) then T1a+T1b (the defense).
 
 ## Key citations
-Poppi 2410.18210 · TamperBench 2602.06911 · Qwen3Guard 2510.14276 · WildJailbreak 2406.18510 · FalseReject 2505.08054 · Deng 2310.06474 · Aakanksha 2406.18682 · MPO 2505.16869 · Wang refusal-universal 2505.17306 · Zhang MRL2026 2026.mrl-1.19 · Lee 2610.00320 · C-ΔΘ 2602.04521 · BanglaSafe 2608.22335 · NEST 2611.10971 · Krasnodebska 2606.07535
+Poppi 2410.18210 · TamperBench 2602.06911 · Qwen3Guard 2510.14276 · WildJailbreak 2406.18510 · FalseReject 2505.08054 · Deng 2310.06474 · Aakanksha 2406.18682 · MPO 2505.16869 · Wang refusal-universal 2505.17306 · Zhang MRL2026 2026.mrl-1.19 · Lee 2610.00320 · ProCon 2509.06795 · BanglaSafe 2608.22335 · NEST 2611.10971 · Krasnodebska 2606.07535
