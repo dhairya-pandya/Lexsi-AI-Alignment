@@ -48,6 +48,7 @@ GPU runs go through HF Jobs (`scripts/hf_job.sh`); always pass `--timeout` or th
 ## Read more
 
 - **Full writeup:** [`article/hf_article.md`](article/hf_article.md) · technical detail: [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md)
+- **Interactive site:** a one-page summary of the finding, every experiment, and the repair lives in [`site/`](site/); deploy to Vercel (see [`site/README.md`](site/README.md))
 - **Datasets:** [tiny-aya-tamper-evals](https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals) (public, redacted) · [tiny-aya-tamper-evals-gated](https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals-gated) (gated, full)
 - **Repaired checkpoint:** [tiny-aya-fire-bn-repaired_k1](https://huggingface.co/codingpanda06/tiny-aya-fire-bn-repaired_k1) (gated)
 - **Base model:** [CohereLabs/tiny-aya-fire](https://huggingface.co/CohereLabs/tiny-aya-fire)

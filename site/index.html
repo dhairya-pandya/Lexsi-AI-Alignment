@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Does safety survive an attack in another language?</title>
+<meta name="description" content="Cross-lingual tamper resistance of fine-tuning-stage safety defenses. English-trained defenses pass in English (0-4% harm) and fail in Bengali (59-61%). A low-rank weight repair brings Bengali harm back to 14%.">
+<meta property="og:title" content="One model. Two verdicts.">
+<meta property="og:description" content="English-trained safety defenses pass in English and fail in Bengali. A post-hoc low-rank repair closes the gap.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#F5F5F7; --card:#FFFFFF; --hair:#E4E4EA; --grid:#ECECF0;
+    --ink:#1D1D1F; --gray:#86868B; --slate:#AEAEB2;
+    --blue:#0071E3; --blue-ink:#0058B9;
+    --green:#34C759; --green-txt:#248A3D; --green-bg:#EAF7EE;
+    --red:#FF3B30; --red-txt:#D70015; --red-bg:#FDECEA;
+    --amber:#FF9F0A; --amber-txt:#9A6200; --amber-bg:#FFF4E2;
+    --maxw:980px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page:#000000; --card:#1C1C1E; --hair:#2C2C2E; --grid:#2A2A2C;
+      --ink:#F5F5F7; --gray:#98989D; --slate:#8E8E93;
+      --blue:#0A84FF; --blue-ink:#64B5FF;
+      --green:#30D158; --green-txt:#5BE07B; --green-bg:#17301E;
+      --red:#FF453A; --red-txt:#FF7A70; --red-bg:#361513;
+      --amber:#FFD60A; --amber-txt:#FFD60A; --amber-bg:#30260A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --page:#000000; --card:#1C1C1E; --hair:#2C2C2E; --grid:#2A2A2C;
+    --ink:#F5F5F7; --gray:#98989D; --slate:#8E8E93;
+    --blue:#0A84FF; --blue-ink:#64B5FF;
+    --green:#30D158; --green-txt:#5BE07B; --green-bg:#17301E;
+    --red:#FF453A; --red-txt:#FF7A70; --red-bg:#361513;
+    --amber:#FFD60A; --amber-txt:#FFD60A; --amber-bg:#30260A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Helvetica Neue",sans-serif;
+    background:var(--page); color:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    line-height:1.5; letter-spacing:-.011em; overflow-x:hidden;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px;}
+  a{color:var(--blue); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+  .tnum{font-variant-numeric:tabular-nums;}
+
+  /* nav */
+  nav{position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--page) 82%, transparent);
+    backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--hair);}
+  .navbar{display:flex; align-items:center; justify-content:space-between; height:48px;}
+  .brand{font-size:15px; font-weight:600; letter-spacing:-.015em;}
+  .brand .dim{color:var(--gray); font-weight:500;}
+  .navlinks{display:flex; gap:22px; font-size:13.5px; font-weight:500;}
+  .navlinks a{color:var(--ink);} .navlinks a:hover{color:var(--blue); text-decoration:none;}
+  @media (max-width:640px){ .navlinks{display:none;} }
+
+  /* hero */
+  .hero{text-align:center; padding:86px 0 54px;}
+  .eyebrow{font-size:15px; font-weight:600; color:var(--blue); letter-spacing:-.005em; margin-bottom:14px;}
+  h1{font-size:clamp(40px,8vw,72px); font-weight:700; letter-spacing:-.03em; line-height:1.02;}
+  .sub{font-size:clamp(17px,2.4vw,21px); color:var(--gray); font-weight:400; letter-spacing:-.012em;
+    max-width:40ch; margin:18px auto 0; line-height:1.4;}
+  .cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px;}
+  .btn{font-size:15px; font-weight:500; padding:11px 22px; border-radius:980px; border:1px solid transparent; letter-spacing:-.01em;}
+  .btn.primary{background:var(--blue); color:#fff;} .btn.primary:hover{text-decoration:none; filter:brightness(1.06);}
+  .btn.ghost{background:transparent; color:var(--blue); border-color:color-mix(in srgb, var(--blue) 35%, transparent);}
+  .btn.ghost:hover{text-decoration:none; background:color-mix(in srgb, var(--blue) 8%, transparent);}
+
+  /* hero verdict split */
+  .verdict{display:flex; justify-content:center; align-items:stretch; margin:46px auto 0; max-width:560px;}
+  .vcol{flex:1; min-width:0; padding:6px 8px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;}
+  .vcol + .vcol{border-left:1px solid var(--hair);}
+  .vcap{display:flex; align-items:center; gap:8px; font-size:15px; font-weight:500; color:var(--gray); margin-bottom:8px;}
+  .dot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .dg{background:var(--green);} .dr{background:var(--red);}
+  .vnum{font-weight:700; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .vnum.g{color:var(--green-txt); font-size:clamp(30px,7.5vw,58px);}
+  .vnum.r{color:var(--red-txt); font-size:clamp(33px,8.5vw,74px);}
+  .vnum .sep{font-size:.46em; font-weight:500; vertical-align:.22em; margin:0 .05em;}
+  .vwhat{font-size:13px; color:var(--slate); font-weight:500; margin-top:8px;}
+  .foot-cap{font-size:15px; color:var(--gray); max-width:50ch; margin:30px auto 0; line-height:1.5;}
+  .foot-cap b{color:var(--ink); font-weight:600;}
+
+  /* sections */
+  section{padding:30px 0;}
+  .sechead{text-align:center; max-width:44ch; margin:0 auto 26px;}
+  .sechead .k{font-size:14px; font-weight:600; color:var(--blue); margin-bottom:8px;}
+  h2{font-size:clamp(28px,5vw,40px); font-weight:700; letter-spacing:-.025em; line-height:1.08;}
+  .sechead p{font-size:17px; color:var(--gray); margin-top:12px; line-height:1.45;}
+
+  .card{background:var(--card); border-radius:22px; padding:30px; border:1px solid var(--hair);}
+  .card.flush{padding:30px 26px;}
+  .k{font-size:13px; font-weight:600; color:var(--blue); margin-bottom:6px;}
+  h3{font-size:22px; font-weight:700; letter-spacing:-.02em; line-height:1.15;}
+  .note{font-size:15px; color:var(--gray); line-height:1.5; margin-top:10px;}
+  .note b{color:var(--ink); font-weight:600;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr;} }
+
+  /* gap bars */
+  .gaprows{margin-top:22px; display:flex; flex-direction:column; gap:18px;}
+  .gaprow{display:grid; grid-template-columns:84px 1fr 132px; align-items:center; gap:14px;}
+  @media (max-width:520px){ .gaprow{grid-template-columns:62px 1fr 96px; gap:9px;} }
+  .lbl{display:flex; align-items:center; gap:8px; font-size:15px; font-weight:500;}
+  .track{height:28px; background:var(--grid); border-radius:8px; position:relative; overflow:hidden;}
+  .fill{position:absolute; left:0; top:0; bottom:0; border-radius:8px; transition:width .9s cubic-bezier(.2,.7,.2,1);}
+  .fg{background:var(--green);} .fr{background:var(--red);}
+  .val{font-size:clamp(20px,4.6vw,32px); font-weight:700; letter-spacing:-.02em; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .vg{color:var(--green-txt);} .vr{color:var(--red-txt);}
+  .val .sep{font-size:.5em; font-weight:500; vertical-align:.2em; margin:0 .03em;}
+  .ticks{display:grid; grid-template-columns:84px 1fr 132px; margin-top:10px;}
+  .ticks .row{grid-column:2; display:flex; justify-content:space-between; font-size:11.5px; color:var(--slate); font-weight:500;}
+  @media (max-width:520px){ .ticks{grid-template-columns:62px 1fr 96px;} }
+
+  /* experiments table */
+  .exp{display:flex; flex-direction:column; gap:10px; margin-top:4px;}
+  .exprow{display:grid; grid-template-columns:1fr auto; gap:14px; align-items:start;
+    background:var(--card); border:1px solid var(--hair); border-radius:16px; padding:18px 20px;}
+  .exprow .t{font-size:16.5px; font-weight:600; letter-spacing:-.015em;}
+  .exprow .d{font-size:14px; color:var(--gray); margin-top:4px; line-height:1.45;}
+  .tag{font-size:12px; font-weight:600; padding:5px 11px; border-radius:980px; white-space:nowrap; align-self:center;}
+  .tag.win{background:var(--green-bg); color:var(--green-txt);}
+  .tag.neg{background:var(--red-bg); color:var(--red-txt);}
+  .tag.null{background:var(--grid); color:var(--gray);}
+  .tag.part{background:var(--amber-bg); color:var(--amber-txt);}
+  @media (max-width:520px){ .exprow{grid-template-columns:1fr; } .tag{justify-self:start;} }
+
+  svg{display:block; width:100%; height:auto;}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; font-size:13.5px; color:var(--gray); font-weight:500;}
+  .legend span{display:flex; align-items:center; gap:7px;}
+  .sw{width:15px; height:4px; border-radius:2px;} .sw.band{height:11px; opacity:.5;}
+
+  .stat-big{font-size:68px; font-weight:700; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; margin-top:10px;}
+  .pill{display:inline-block; font-size:13px; font-weight:600; padding:5px 12px; border-radius:980px; background:var(--green-bg); color:var(--green-txt); margin-top:14px;}
+
+  /* conclusions */
+  .concl{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:4px;}
+  @media (max-width:760px){ .concl{grid-template-columns:1fr;} }
+  .cc{background:var(--card); border:1px solid var(--hair); border-radius:18px; padding:22px 24px;}
+  .cc .n{font-size:13px; font-weight:700; color:var(--blue); font-variant-numeric:tabular-nums;}
+  .cc h4{font-size:17px; font-weight:650; letter-spacing:-.015em; margin-top:6px;}
+  .cc p{font-size:14.5px; color:var(--gray); margin-top:7px; line-height:1.5;}
+  .cc p b{color:var(--ink); font-weight:600;}
+
+  /* reproduce */
+  .code{background:var(--card); border:1px solid var(--hair); border-radius:16px; padding:18px 20px; overflow-x:auto;
+    white-space:pre-wrap; word-break:break-word;
+    font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:13px; line-height:1.9; color:var(--ink);}
+  .code .c{color:var(--gray);}
+  .linkgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;}
+  @media (max-width:640px){ .linkgrid{grid-template-columns:1fr;} }
+  .lk{display:flex; flex-direction:column; gap:3px; background:var(--card); border:1px solid var(--hair); border-radius:14px; padding:15px 18px;}
+  .lk:hover{text-decoration:none; border-color:color-mix(in srgb, var(--blue) 45%, var(--hair));}
+  .lk .lt{font-size:15px; font-weight:600; color:var(--ink);}
+  .lk .ld{font-size:13px; color:var(--gray);}
+
+  footer{border-top:1px solid var(--hair); margin-top:40px; padding:28px 0 60px; text-align:center;}
+  footer .ft{font-size:13px; color:var(--gray); line-height:1.7;}
+  footer a{color:var(--gray);} footer a:hover{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap navbar">
+  <div class="brand">Tiny Aya Fire <span class="dim">· tamper study</span></div>
+  <div class="navlinks">
+    <a href="#finding">Finding</a>
+    <a href="#experiments">Experiments</a>
+    <a href="#repair">Repair</a>
+    <a href="#conclusions">Conclusions</a>
+    <a href="https://github.com/dhairya-pandya/Lexsi-AI-Alignment">GitHub</a>
+  </div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Cross-lingual tamper resistance</div>
+  <h1>One model.<br>Two verdicts.</h1>
+  <p class="sub">An English-trained safety defense, attacked in Bengali. Whether it holds depends entirely on the language you test in.</p>
+
+  <div class="verdict">
+    <div class="vcol">
+      <div class="vcap"><span class="dot dg"></span>English</div>
+      <div class="vnum g tnum">0<span class="sep">–</span>4<span class="sep" style="font-size:.4em;vertical-align:.1em">%</span></div>
+      <div class="vwhat">harmful prompts answered</div>
+    </div>
+    <div class="vcol">
+      <div class="vcap"><span class="dot dr"></span>Bengali</div>
+      <div class="vnum r tnum">59<span class="sep">–</span>61<span class="sep" style="font-size:.34em;vertical-align:.1em">%</span></div>
+      <div class="vwhat">harmful prompts answered</div>
+    </div>
+  </div>
+  <p class="foot-cap">An English-only evaluation would certify this model as robust. It isn't. A post-hoc low-rank repair brings Bengali harm back to <b>14%</b> while keeping capability intact.</p>
+
+  <div class="cta">
+    <a class="btn primary" href="https://github.com/dhairya-pandya/Lexsi-AI-Alignment/blob/main/article/hf_article.md">Read the writeup</a>
+    <a class="btn ghost" href="https://github.com/dhairya-pandya/Lexsi-AI-Alignment">View the code</a>
+  </div>
+</div></header>
+
+<!-- FINDING -->
+<section id="finding"><div class="wrap">
+  <div class="sechead">
+    <div class="k">The finding</div>
+    <h2>Same model, two readings</h2>
+    <p>Take Tiny Aya Fire, defend it with the usual SafeTune methods (Lisa, Vaccine, Booster, RepNoise), then run a poisoned fine-tune in Bengali. Evaluate in both languages.</p>
+  </div>
+  <div class="card flush">
+    <div class="gaprows">
+      <div class="gaprow">
+        <div class="lbl"><span class="dot dg"></span>English</div>
+        <div class="track"><div class="fill fg" data-w="4"></div></div>
+        <div class="val vg tnum">0<span class="sep">–</span>4%</div>
+      </div>
+      <div class="gaprow">
+        <div class="lbl"><span class="dot dr"></span>Bengali</div>
+        <div class="track"><div class="fill fr" data-w="60"></div></div>
+        <div class="val vr tnum">59<span class="sep">–</span>61%</div>
+      </div>
+    </div>
+    <div class="ticks"><div class="row"><span>0</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div></div>
+    <p class="note" style="margin-top:20px">The defense is <b>language-local</b>. It holds exactly where it was trained and tested, and nowhere else. Adding Bengali safety data barely helps (harm 0.57 to 0.46): the attack overwrites the safety you add. This is a tamper-resistance problem, not a coverage gap. Harm is a HarmBench / Qwen3Guard unsafe rate; 95% bootstrap CIs, one seed.</p>
+  </div>
+</div></section>
+
+<!-- EXPERIMENTS -->
+<section id="experiments"><div class="wrap">
+  <div class="sechead">
+    <div class="k">Every experiment we ran</div>
+    <h2>What we tried, and what happened</h2>
+    <p>Seven lines of attack on one question. Most failed to close the gap. One worked.</p>
+  </div>
+  <div class="exp">
+    <div class="exprow">
+      <div><div class="t">E1 · Where does safety live?</div><div class="d">Remove the always-injected 359-token safety preamble and re-test. Refusals barely move: safety is in the weights, not the prompt (gates G1/G2). This negative result is what made the tamper question the interesting one.</div></div>
+      <span class="tag neg">Negative</span>
+    </div>
+    <div class="exprow">
+      <div><div class="t">SafeTune defenses under a non-English attack</div><div class="d">Lisa, Vaccine, Booster, RepNoise, applied in English, then attacked in Bengali. English harm 0–4%, Bengali harm 59–61%. The core finding.</div></div>
+      <span class="tag neg">Gap confirmed</span>
+    </div>
+    <div class="exprow">
+      <div><div class="t">Mechanism · refusal drift &amp; low-rank dW</div><div class="d">Refusal-direction cosine is a weak proxy (bn drift 0.768 vs en 0.805). The actionable signal: the attack's weight change dW = W_post − W_base is low-rank, top-2 directions hold ≈50% of the energy.</div></div>
+      <span class="tag part">Signal</span>
+    </div>
+    <div class="exprow">
+      <div><div class="t">GRPO safety pilot</div><div class="d">Defensive stay-safe RL. Null: an inconsistent stop token ran TRL to max length and a binary reward gave no gradient. Fixable, not pursued.</div></div>
+      <span class="tag null">Null</span>
+    </div>
+    <div class="exprow">
+      <div><div class="t">Benign twins</div><div class="d">Paired benign rewrites of harmful prompts cleanly fix over-refusal and capability loss, but do not close the language gap on their own.</div></div>
+      <span class="tag part">Partial</span>
+    </div>
+    <div class="exprow">
+      <div><div class="t">Experiment A · low-rank dW projection</div><div class="d">Strip the top-k singular directions of the attack's weight update per matrix. Post-hoc, training-free. Bengali harm 50% → 14% at k=1 with MMLU preserved. The headline defense.</div></div>
+      <span class="tag win">Works</span>
+    </div>
+    <div class="exprow">
+      <div><div class="t">Experiment B · union-subspace anchoring</div><div class="d">The training-time counterpart: anchor the refusal subspace during the fine-tune so the attack can't land. English anchoring matched the control (0.22); the union made it worse (0.33). Prevention lost.</div></div>
+      <span class="tag neg">Negative</span>
+    </div>
+  </div>
+</div></section>
+
+<!-- REPAIR -->
+<section id="repair"><div class="wrap">
+  <div class="sechead">
+    <div class="k">Experiment A · the repair</div>
+    <h2>The damage is low-rank, so strip it out</h2>
+    <p>The attack's weight change dW is nearly rank-1. Removing its top singular directions per matrix removes the harmful write and keeps the diffuse benign gain. No retraining.</p>
+  </div>
+
+  <div class="card flush">
+    <div class="k">Bengali and English harm vs directions removed</div>
+    <h3>Remove the top weight directions</h3>
+    <svg viewBox="0 0 1000 330" role="img" aria-label="Harm versus number of singular directions removed per matrix">
+      <g stroke="var(--grid)" stroke-width="1">
+        <line x1="64" y1="286" x2="968" y2="286"/>
+        <line x1="64" y1="211.5" x2="968" y2="211.5"/>
+        <line x1="64" y1="137" x2="968" y2="137"/>
+        <line x1="64" y1="62.5" x2="968" y2="62.5"/>
+      </g>
+      <g fill="var(--slate)" font-size="12.5" font-weight="500" text-anchor="end">
+        <text x="52" y="290">0</text><text x="52" y="215.5">20%</text><text x="52" y="141">40%</text><text x="52" y="66.5">60%</text>
+      </g>
+      <!-- bn CI band: harm 0..0.65 over y 286..44 (242px per 0.65) -->
+      <polygon points="64,70 290,209 516,209 742,223 968,238 968,270 742,262 516,255 290,250 64,130" fill="var(--red)" opacity="0.10"/>
+      <!-- bn: 50,14,14,11,8 -> y = 286 - harm/0.65*242 -->
+      <polyline points="64,100.8 290,234.9 516,234.9 742,245.9 968,256.2" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- en: 19,2,2,2,2 -->
+      <polyline points="64,215.3 290,278.6 516,278.6 742,278.6 968,278.6" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="var(--red)"><circle cx="64" cy="100.8" r="5.5"/><circle cx="290" cy="234.9" r="5.5"/><circle cx="516" cy="234.9" r="5.5"/><circle cx="742" cy="245.9" r="5.5"/><circle cx="968" cy="256.2" r="5.5"/></g>
+      <g fill="var(--green)"><circle cx="64" cy="215.3" r="4.5"/><circle cx="290" cy="278.6" r="4.5"/><circle cx="516" cy="278.6" r="4.5"/><circle cx="742" cy="278.6" r="4.5"/><circle cx="968" cy="278.6" r="4.5"/></g>
+      <g fill="var(--red-txt)" font-size="14.5" font-weight="700" text-anchor="middle">
+        <text x="64" y="87">50%</text><text x="290" y="222">14%</text><text x="742" y="233">11%</text><text x="968" y="244">8%</text>
+      </g>
+      <g fill="var(--gray)" font-size="13.5" font-weight="600" text-anchor="middle">
+        <text x="64" y="312">k=0</text><text x="290" y="312">k=1</text><text x="516" y="312">k=2</text><text x="742" y="312">k=4</text><text x="968" y="312">k=8</text>
+      </g>
+    </svg>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--red)"></span>Bengali harm</span>
+      <span><span class="sw" style="background:var(--green)"></span>English harm</span>
+      <span><span class="sw band" style="background:var(--red)"></span>95% CI</span>
+      <span style="margin-left:auto">singular directions of dW removed, per weight matrix</span>
+    </div>
+    <p class="note" style="margin-top:16px">Removing just the <b>single top direction</b> (k=1) drops Bengali harm 50% → 14% with non-overlapping CIs, and English harm 19% → 2%. k=1–2 is the knee of the curve, matching the mechanism. Higher k trades a little more Bengali harm (down to 8%) for rising over-refusal.</p>
+  </div>
+
+  <div class="grid2" style="margin-top:18px">
+    <div class="card">
+      <div class="k">Capability</div>
+      <h3>The fix is not degeneration</h3>
+      <div class="stat-big tnum" style="color:var(--ink)">0.56</div>
+      <p class="note">MMLU at the repair (<b>0.55</b> before, 0.50–0.58 across all k). The harmful write is concentrated; the benign task gain is diffuse and survives the cut. Coherence holds at every k.</p>
+      <span class="pill">capability preserved</span>
+    </div>
+    <div class="card">
+      <div class="k">Experiment B · the counterpart test</div>
+      <h3>Prevention does not work</h3>
+      <p class="note" style="margin-bottom:6px">Anchoring the refusal subspace during fine-tuning. Bengali harm after the attack:</p>
+      <svg viewBox="0 0 470 182" role="img" aria-label="Bengali harm for no anchor, English anchor, and union anchor">
+        <g stroke="var(--grid)" stroke-width="1">
+          <line x1="150" y1="8" x2="150" y2="150"/><line x1="222.5" y1="8" x2="222.5" y2="150"/>
+          <line x1="295" y1="8" x2="295" y2="150"/><line x1="367.5" y1="8" x2="367.5" y2="150"/><line x1="440" y1="8" x2="440" y2="150"/>
+        </g>
+        <g fill="var(--slate)" font-size="11.5" font-weight="500" text-anchor="middle">
+          <text x="150" y="170">0</text><text x="222.5" y="170">10%</text><text x="295" y="170">20%</text><text x="367.5" y="170">30%</text><text x="440" y="170">40%</text>
+        </g>
+        <g>
+          <text x="140" y="31" fill="var(--ink)" font-size="13" font-weight="500" text-anchor="end">no anchor</text>
+          <rect x="150" y="14" width="159.5" height="22" rx="6" fill="var(--slate)"/>
+          <text x="319" y="32" fill="var(--ink)" font-size="14" font-weight="700">0.22</text>
+        </g>
+        <g>
+          <text x="140" y="75" fill="var(--ink)" font-size="13" font-weight="500" text-anchor="end">anchor en</text>
+          <rect x="150" y="58" width="159.5" height="22" rx="6" fill="var(--green)"/>
+          <text x="319" y="76" fill="var(--ink)" font-size="14" font-weight="700">0.22</text>
+        </g>
+        <g>
+          <text x="140" y="119" fill="var(--ink)" font-size="13" font-weight="500" text-anchor="end">anchor en+bn+hi</text>
+          <rect x="150" y="102" width="239.25" height="22" rx="6" fill="var(--red)"/>
+          <text x="398" y="120" fill="var(--red-txt)" font-size="14" font-weight="700">0.33</text>
+        </g>
+      </svg>
+      <p class="note"><b>Repair beats prevention.</b> English anchoring changes nothing; the union, built from machine-translated refusal directions, is worse.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- CONCLUSIONS -->
+<section id="conclusions"><div class="wrap">
+  <div class="sechead">
+    <div class="k">What it means</div>
+    <h2>The takeaways</h2>
+  </div>
+  <div class="concl">
+    <div class="cc"><div class="n">01</div><h4>English-only evaluation certifies unsafe models</h4><p>A defended model can look robust in English and answer <b>59–61%</b> of harmful prompts in Bengali. If you only test in English, you never see it.</p></div>
+    <div class="cc"><div class="n">02</div><h4>The gap is tamper, not coverage</h4><p>Adding target-language safety data barely helps. The attack <b>overwrites</b> the safety you add. Fixing it means resisting the write, not patching the blind spot.</p></div>
+    <div class="cc"><div class="n">03</div><h4>The damage is low-rank and repairable</h4><p>The attack concentrates in ~2 singular directions. Project them out and Bengali harm drops <b>50% → 14%</b> with capability intact. Cheap, training-free, post-hoc.</p></div>
+    <div class="cc"><div class="n">04</div><h4>Repair beats prevention</h4><p>The training-time counterpart, subspace anchoring, did not close the gap and sometimes made it worse. The actionable defense is post-hoc repair of the low-rank write.</p></div>
+  </div>
+</div></section>
+
+<!-- REPRODUCE -->
+<section id="reproduce"><div class="wrap">
+  <div class="sechead">
+    <div class="k">Reproduce &amp; explore</div>
+    <h2>Run it yourself</h2>
+  </div>
+  <div class="code">
+<span class="c"># build attack / safety data (CPU)</span>
+python -m hsafe.data.build
+<span class="c"># the low-rank repair, full k sweep (Exp A, A100)</span>
+python -m hsafe.tamper.project_dw --lang bn --ks 0 1 2 4 8
+<span class="c"># training-time anchoring (Exp B, A100)</span>
+python -m hsafe.tamper.anchor_subspace
+  </div>
+  <div class="linkgrid">
+    <a class="lk" href="https://github.com/dhairya-pandya/Lexsi-AI-Alignment"><span class="lt">GitHub repository</span><span class="ld">Code, results, and the full writeup</span></a>
+    <a class="lk" href="https://github.com/dhairya-pandya/Lexsi-AI-Alignment/blob/main/article/hf_article.md"><span class="lt">Full writeup</span><span class="ld">What we built, how, and what else we tried</span></a>
+    <a class="lk" href="https://huggingface.co/datasets/dhairyapandya/tiny-aya-tamper-evals"><span class="lt">Evaluation dataset</span><span class="ld">tiny-aya-tamper-evals · public, redacted</span></a>
+    <a class="lk" href="https://huggingface.co/codingpanda06/tiny-aya-fire-bn-repaired_k1"><span class="lt">Repaired checkpoint</span><span class="ld">tiny-aya-fire-bn-repaired_k1 · gated</span></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap ft">
+  Judges: HarmBench-Mistral-7b, Qwen3Guard-Gen-4B · prompts: StrongREJECT, MultiJail · translation: NLLB-200<br>
+  Models are CC-BY-NC-4.0; derived artifacts are non-commercial.<br>
+  <a href="https://github.com/dhairya-pandya/Lexsi-AI-Alignment">github.com/dhairya-pandya/Lexsi-AI-Alignment</a>
+</div></footer>
+
+<script>
+  // Animate the gap bars when the finding scrolls into view.
+  (function(){
+    var fills = document.querySelectorAll('.fill[data-w]');
+    fills.forEach(function(f){ f.style.width = '0%'; });
+    function run(){ fills.forEach(function(f){ f.style.width = f.getAttribute('data-w') + '%'; }); }
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches){ run(); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if (e.isIntersecting){ run(); io.disconnect(); } });
+    }, {threshold: 0.4});
+    var t = document.getElementById('finding'); if (t) io.observe(t); else run();
+  })();
+</script>
+</body>
+</html>
