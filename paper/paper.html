@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cross-Lingual Tamper Resistance of Fine-Tuning-Stage Safety Defenses</title>
+<style>
+  @page { size: letter; margin: 22mm 20mm; }
+  :root{ --ink:#111; --muted:#444; --rule:#bbb; --soft:#f2f2f0; }
+  *{ box-sizing:border-box; }
+  html{ font-size:10.5pt; }
+  body{
+    font-family: Georgia, "Times New Roman", serif; color:var(--ink);
+    line-height:1.42; margin:0; hyphens:auto; text-align:justify;
+  }
+  h1,h2,h3,h4{ font-family:"Helvetica Neue", Arial, sans-serif; line-height:1.2; }
+  h1{ font-size:18pt; text-align:center; margin:0 0 4pt; letter-spacing:-.01em; }
+  .authors{ text-align:center; font-family:"Helvetica Neue",Arial,sans-serif; font-size:10.5pt; margin:6pt 0 2pt; }
+  .affil{ text-align:center; font-size:9pt; color:var(--muted); margin-bottom:12pt; font-family:"Helvetica Neue",Arial,sans-serif; }
+  h2{ font-size:12pt; margin:16pt 0 5pt; }
+  h3{ font-size:10.5pt; margin:11pt 0 3pt; }
+  p{ margin:0 0 6pt; }
+  .abstract{ background:var(--soft); border:0.5pt solid var(--rule); padding:9pt 12pt; margin:0 0 6pt; font-size:9.6pt; }
+  .abstract h2{ font-size:10pt; margin:0 0 4pt; }
+  .kw{ font-size:9pt; color:var(--muted); margin-bottom:10pt; }
+  code,.mono{ font-family:"SF Mono", Menlo, Consolas, monospace; font-size:9pt; background:var(--soft); padding:0 2px; }
+  table{ border-collapse:collapse; width:100%; font-size:8.8pt; margin:6pt 0 4pt; break-inside:avoid;
+    font-family:"Helvetica Neue",Arial,sans-serif; }
+  caption{ caption-side:top; text-align:left; font-size:8.6pt; color:var(--muted); margin-bottom:3pt; font-family:Georgia,serif; }
+  th,td{ border-bottom:0.5pt solid var(--rule); padding:3pt 6pt; text-align:center; }
+  th{ border-top:0.75pt solid var(--ink); border-bottom:0.75pt solid var(--ink); font-weight:600; }
+  td:first-child, th:first-child{ text-align:left; }
+  tr:last-child td{ border-bottom:0.75pt solid var(--ink); }
+  .fig{ text-align:center; margin:8pt 0; break-inside:avoid; }
+  .fig img{ width:100%; max-width:100%; border:0.5pt solid var(--rule); }
+  .fig .cap{ font-size:8.6pt; color:var(--muted); text-align:left; margin-top:3pt; }
+  ol.refs{ font-size:8.6pt; line-height:1.3; padding-left:16pt; }
+  ol.refs li{ margin-bottom:2.5pt; }
+  .contrib li{ margin-bottom:3pt; }
+  .small{ font-size:9pt; color:var(--muted); }
+  strong{ font-weight:600; }
+  hr{ border:0; border-top:0.5pt solid var(--rule); margin:10pt 0; }
+</style>
+</head>
+<body>
+
+<h1>Does Safety Survive an Attack in Another Language?<br>Cross-Lingual Tamper Resistance of Fine-Tuning-Stage Safety Defenses</h1>
+<div class="authors">Dhairya Pandya &nbsp;&middot;&nbsp; runtime-terror &nbsp;&middot;&nbsp; ByteKnight28</div>
+<div class="affil">Lexsi AI Safety &amp; Alignment Hackathon, 2026 &nbsp;|&nbsp; Models and data: huggingface.co/dhairyapandya</div>
+
+<div class="abstract">
+<h2>Abstract</h2>
+<p>Model providers that offer fine-tuning as a service apply safety defenses (Lisa, Vaccine, Booster, RepNoise) to stop a customer's fine-tune from stripping a model's safety. These defenses are built and evaluated almost entirely in English. Two lines of prior work set up our question: fine-tuning attacks transfer across languages, and post-hoc low-rank edits can restore safety after a harmful fine-tune in English. We connect them in the cross-lingual tamper setting. We defend <span class="mono">tiny-aya-fire</span> with the standard toolkit, run a poisoned fine-tune in Bengali, and evaluate in both languages. The same defended model refuses almost every harmful English prompt (0&ndash;4% harm) while answering 59&ndash;61% of harmful Bengali ones, a gap an English-only evaluation certifies as robust. Adding target-language safety data barely helps (0.57 to 0.46 harm), because the attack overwrites the safety that is added. We trace the damage to a near rank-one weight write and show it is repairable post hoc: removing the top one or two singular directions of the attack's weight update per matrix drops Bengali harm 50% to 14% with MMLU preserved. A training-time prevention variant (subspace anchoring) does not close the gap and sometimes widens it, so repair beats prevention. Our contribution is the combination, not a new primitive: a low-rank post-hoc repair evaluated in the attacker's language, the demonstration that an English-only evaluation hides the gap, and the prevention-versus-repair result. Results are one seed and one model.</p>
+</div>
+<div class="kw"><strong>Keywords:</strong> LLM safety, harmful fine-tuning, tamper resistance, multilingual, red teaming, low-rank repair.</div>
+
+<h2>1. Introduction</h2>
+<p>Fine-tuning as a service lets a customer adapt a provider's model, and it also lets a malicious customer try to remove the model's refusals. Fine-tuning-stage defenses answer this threat: the provider hardens the model (Vaccine, Booster, RepNoise) or constrains the customer's fine-tune (Lisa) so that a poisoned fine-tune cannot strip safety. These defenses are developed and benchmarked almost entirely in English.</p>
+<p>This paper asks whether that English-centric evaluation hides a failure mode. An attacker is not obliged to poison in English. If the attack data is in Hindi or Bengali, two questions follow. First, does the English-trained defense still hold, and does it hold <em>in the attacker's language</em>? Second, and more dangerous for a provider, would an English-only evaluation notice if it did not?</p>
+<p>We find the answer to both is no. Under a Bengali fine-tuning attack, a defended model stays safe in English and becomes unsafe in Bengali, and an English-only dashboard reports only the safe half. We then show the damage has exploitable structure: the attack's weight update is nearly rank one, so projecting out its top singular directions is a cheap, training-free repair that restores multilingual safety without hurting capability. The training-time counterpart, anchoring the refusal subspace during the fine-tune, does not work.</p>
+<p><strong>Contributions.</strong></p>
+<ul class="contrib">
+<li>We show that English-trained fine-tuning-stage defenses are <em>language-local</em>: after a Bengali attack, English harm is 0&ndash;4% while Bengali harm is 59&ndash;61%, so an English-only evaluation wrongly certifies robustness (Section 5.1).</li>
+<li>We show the gap is a tamper problem, not a coverage gap: adding translated Bengali safety data moves harm only 0.57 to 0.46, because the attack overwrites it (Section 5.2).</li>
+<li>We give a post-hoc, training-free repair that projects out the top singular directions of the attack's weight update and cuts Bengali harm 50% to 14% at rank one, with MMLU preserved (Section 5.3).</li>
+<li>We show the training-time prevention counterpart (subspace anchoring) fails and can make things worse, so repair beats prevention in this setting (Section 5.4).</li>
+</ul>
+<p>We claim no new mechanism. Cross-lingual fragility and low-rank safety repair are both known. The contribution is their intersection, the English-only blind spot, and the prevention-versus-repair result, on one seed and one model.</p>
+
+<h2>2. Related Work</h2>
+<p><strong>Cross-lingual safety and fine-tuning attacks.</strong> Fine-tuning attacks transfer across languages: a harmful fine-tune in one language degrades refusals in others [1]. Low-resource and non-English jailbreaks evade English-tuned safety [13], and the refusal direction is largely shared yet transfers unevenly across languages [12, 5]. Cross-lingual defenses exist, but at training time: Safety Kernel restricts fine-tuning to shared safety-neuron coordinates [6], MPO narrows the cross-language reward gap [7], and multilingual refusal alignment adds translated refusal data [8]. These prevent at train time; we evaluate a non-English attack against English-trained defenses and repair after the fact.</p>
+<p><strong>Post-hoc low-rank safety repair.</strong> Several methods restore safety after a harmful fine-tune by low-rank or subspace edits, in the English setting: safety subspace fusion [9], low-rank extrapolation [10], neuron-level realignment [11], and the observation that a few-sample harmful fine-tune writes a near rank-one update whose top directions can be removed [2]. A counterpoint argues safety is not cleanly low-rank-separable. We apply this family in the cross-lingual tamper setting and compare it against a training-time projection constraint, ProCon [3].</p>
+<p><strong>Tamper-resistance evaluation.</strong> TamperBench stress-tests tamper resistance across attacks and defenses [15], and refusal-direction cosine is a weak proxy for behavioral safety [4]. Bengali safety benchmarks are emerging [16]. We adopt per-language harm, over-refusal, and capability metrics to avoid the English-only blind spot those works warn about.</p>
+
+<h2>3. Threat Model and Method</h2>
+<h3>3.1 Threat model</h3>
+<p>A provider exposes fine-tuning of an aligned chat model. An attacker submits a small poisoned dataset to remove refusals, mixing benign task data with a harmful fraction. The provider applies a fine-tuning-stage defense and wants the resulting model to refuse harmful requests in every language. The attacker chooses the language of the poison. The provider's only guaranteed artifact is the pair of weights before and after the customer fine-tune, which is what our repair uses.</p>
+<h3>3.2 Defenses under test</h3>
+<p>We test the standard SafeTune defenses. <strong>Lisa</strong> constrains the customer's fine-tune. <strong>Vaccine</strong> and <strong>Booster</strong> harden the model in a provider stage before the attack, using English safety data. <strong>RepNoise</strong> immunizes the model before the attack. A no-defense baseline bounds the effect.</p>
+<h3>3.3 The attack</h3>
+<p>The attacker fine-tunes <span class="mono">tiny-aya-fire</span> (LoRA, one epoch) on 500 rows: 80% benign GSM8K and 20% harmful BeaverTails. The poison is in English, Hindi, or Bengali. Non-English sets are machine-translated with NLLB-200 and validated (target script 100%, length ratio about 1.0, under 1% repetitive rows).</p>
+<h3>3.4 Low-rank repair (Experiment A)</h3>
+<p>The attack's weight change <span class="mono">dW = W_post &minus; W_base</span> concentrates in a few singular directions. We take the SVD of <span class="mono">dW</span> per attention and MLP projection matrix, remove the top <span class="mono">k</span> singular directions, and keep the rest:</p>
+<p style="text-align:center"><span class="mono">W_repaired = W_base + (dW &minus; top-k SVD component of dW)</span>.</p>
+<p>The repair is post hoc and training-free: the provider applies it once after the customer's fine-tune, with no retraining and no extra data. <span class="mono">k</span> trades harm against over-refusal.</p>
+<h3>3.5 Prevention counterpart (Experiment B)</h3>
+<p>The training-time alternative is to stop the write from landing. Following ProCon [3], we measure the base model's mean projection of harmful prompts onto each refusal direction (a refusal budget), then during the attack fine-tune add a hinge penalty whenever a harmful or refusal example's last-token hidden state (layer 16, unit-normalized) projects below that budget along the anchored directions. We anchor the English refusal direction, and separately the union of English, Bengali, and Hindi directions.</p>
+
+<h2>4. Experimental Setup</h2>
+<p><strong>Model.</strong> <span class="mono">CohereLabs/tiny-aya-fire</span>, with <span class="mono">tiny-aya-global</span> and <span class="mono">aya-expanse-8b</span> as controls. <strong>Harm</strong> is the HarmBench-classifier unsafe rate on StrongREJECT (English, n=208) and MultiJail Bengali prompts (n=120). <strong>Over-refusal</strong> uses XSTest and OR-Bench (n=280). <strong>Capability</strong> is MMLU. We also report a degenerate-output rate. All harm numbers carry 95% bootstrap confidence intervals; results are one seed. Judges are HarmBench-Mistral-7b-val-cls and Qwen3Guard-Gen-4B.</p>
+
+<h2>5. Results</h2>
+
+<div class="fig">
+<img src="../assets/results.png" alt="The language gap, the low-rank repair, and the failed prevention">
+<div class="cap"><strong>Figure 1.</strong> The finding, the repair, and the counterpart test. Top: a defended, Bengali-attacked model is safe in English (0&ndash;4%) and open in Bengali (59&ndash;61%). Middle: removing the top singular directions of <span class="mono">dW</span> drops Bengali harm to 14% at <span class="mono">k=1</span>. Bottom: training-time anchoring does not help (0.22) and the union variant is worse (0.33).</div>
+</div>
+
+<h3>5.1 English-trained defenses are language-local</h3>
+<p>With real English refusal data, a defense can look robust in English and fail in the attacker's language. A Vaccine defense trained on real refusals refuses everything before the attack. An English attack erases it (68% harm). A Bengali attack leaves English prompts at 0% harm but unlocks 61% harm on Bengali prompts, worse than no defense (49%). Booster with real refusals replicates this: after a Bengali attack, 4% English harm against 59% Bengali harm. An English-only evaluation would certify both as robust.</p>
+
+<h3>5.2 The gap is tamper, not coverage</h3>
+<p>Adding translated Bengali safety data to the defense does not close the gap. Table 1 sweeps the Bengali safety fraction. Bengali harm falls only 0.57 to about 0.46 (overlapping intervals) while English harm worsens, because the defense runs before the attack and the Bengali fine-tune overwrites the Bengali safety that was added.</p>
+<table>
+<caption><strong>Table 1.</strong> Dose-response: adding Bengali safety data to the Vaccine defense, then a Bengali attack.</caption>
+<tr><th>Bengali safety data</th><th>unsafe-en</th><th>over-refusal</th><th>Bengali harm</th></tr>
+<tr><td>0%</td><td>0.06 [.03,.09]</td><td>0.22</td><td>0.57 [.47,.66]</td></tr>
+<tr><td>25%</td><td>0.16</td><td>0.16</td><td>0.45 [.36,.54]</td></tr>
+<tr><td>50%</td><td>0.18</td><td>0.09</td><td>0.46 [.38,.55]</td></tr>
+</table>
+
+<h3>5.3 Low-rank repair closes the gap</h3>
+<p>The attack's weight change is nearly rank one: its top two singular directions hold about half of the o_proj update energy. Removing the single top direction (<span class="mono">k=1</span>) drops Bengali harm 50% to 14% with non-overlapping intervals and English harm 19% to 2%, while MMLU holds at 0.56 (Table 2). The harmful write is concentrated and removable; the benign task gain is diffuse and survives. The knee is at <span class="mono">k=1&ndash;2</span>; higher <span class="mono">k</span> trades a little more Bengali harm for over-refusal and capability. The repair is not a degeneration artifact: coherence and MMLU hold at every <span class="mono">k</span>.</p>
+<table>
+<caption><strong>Table 2.</strong> Low-rank repair (Experiment A) on the Bengali-attacked model. One seed; 95% CIs.</caption>
+<tr><th>k (dirs removed)</th><th>en harm (SR)</th><th>bn harm (MultiJail)</th><th>over-refusal</th><th>MMLU</th></tr>
+<tr><td>0 (attacked)</td><td>0.19 [.14,.24]</td><td>0.50 [.42,.58]</td><td>0.05</td><td>0.55</td></tr>
+<tr><td>1</td><td>0.02 [.00,.05]</td><td>0.14 [.09,.21]</td><td>0.16</td><td>0.56</td></tr>
+<tr><td>2</td><td>0.02 [.00,.05]</td><td>0.14 [.08,.21]</td><td>0.16</td><td>0.58</td></tr>
+<tr><td>4</td><td>0.01 [.00,.02]</td><td>0.11 [.06,.17]</td><td>0.18</td><td>0.52</td></tr>
+<tr><td>8</td><td>0.01 [.00,.02]</td><td>0.08 [.04,.13]</td><td>0.20</td><td>0.50</td></tr>
+</table>
+
+<h3>5.4 Prevention does not work; repair does</h3>
+<p>The training-time counterpart fails (Table 3). Anchoring the English refusal direction changes Bengali harm not at all (0.22, identical to the no-anchor control). Anchoring the union of three languages makes it worse (0.33), plausibly because the non-English refusal directions, estimated from machine-translated prompts, are noisy and over-constraining along them fights the task objective. Post-hoc repair of the low-rank write is the defense that works here.</p>
+<table>
+<caption><strong>Table 3.</strong> Subspace anchoring (Experiment B) against a Bengali attack. One seed; 95% CIs.</caption>
+<tr><th>arm</th><th>en harm</th><th>bn harm</th><th>over-refusal</th><th>MMLU</th></tr>
+<tr><td>no anchor (control)</td><td>0.00</td><td>0.22 [.15,.29]</td><td>0.66</td><td>0.49</td></tr>
+<tr><td>anchor span{r_en}</td><td>0.00</td><td>0.22 [.15,.29]</td><td>0.60</td><td>0.50</td></tr>
+<tr><td>anchor span{r_en,r_bn,r_hi}</td><td>0.01</td><td>0.33 [.25,.42]</td><td>0.60</td><td>0.50</td></tr>
+</table>
+
+<h3>5.5 Mechanism and a negative preliminary</h3>
+<p>Refusal-direction cosine is a weak proxy for the damage. A Bengali attack moves the Bengali direction slightly more than English (cos 0.768 vs 0.805), but an English attack that causes 40% harm barely moves either direction, consistent with reports that this cosine does not track behavioral safety [4]. The actionable signal is the low-rank structure of <span class="mono">dW</span>, which motivates the repair. Separately, we found Tiny Aya's refusals do not live in its always-injected 359-token safety preamble: removing it does not lower refusal, and pushing it past the attention window does not either, so safety is in the weights. This negative result is what makes the tamper question the interesting one. A GRPO hardening pilot was null at pilot scale, for reasons visible in training (a missing stop token and a flat binary reward).</p>
+
+<h2>6. Discussion and Limitations</h2>
+<p><strong>Scope.</strong> Results are one seed and one model. The low-rank structure that makes the repair work is not specific to Bengali or to Tiny Aya, so the natural next step is a second seed and a larger model (for example Llama-3.1-8B) to test whether the repair and the gap generalize.</p>
+<p><strong>Judges.</strong> Bengali harm labels rely on Qwen3Guard plus NLLB translation. A native-speaker audit would bound judge error on the headline number, and native Bengali prompts would remove the translation dependency.</p>
+<p><strong>Adaptive attackers.</strong> Post-hoc repair is a provider-side defense. A determined attacker has no incentive to leave the harmful write in a removable subspace, and recent work shows adaptive attacks can evade region-based recovery [2, 10]. Our repair targets honest-but-unsafe fine-tunes and the audit setting, not an attacker optimizing against the repair.</p>
+<p><strong>Prevention.</strong> We anchored on machine-translated refusal directions; the union regression is the likely cause. Prevention should be revisited with native, non-translated directions before it is called dead.</p>
+
+<h2>7. Conclusion</h2>
+<p>An English-only evaluation can certify a model that is unsafe in another language. For a provider, the practical rules are to evaluate in the attacker's language, to report over-refusal and output quality next to harm, and to audit what the safety data actually contains. When the gap appears, it is not a dead end: the tamper damage is low-rank, and low-rank damage is repairable post hoc, cheaply and without retraining. With more compute the same repair plausibly generalizes into a language-agnostic safety pass after any fine-tune.</p>
+
+<hr>
+<h2>References</h2>
+<ol class="refs">
+<li>Poppi et al. Towards Understanding the Fragility of Multilingual LLMs against Fine-Tuning Attacks. arXiv:2410.18210.</li>
+<li>Lee et al. Refusal Localizes, the Damage Relocates: Safety Layers Under Few-Sample Fine-Tuning. arXiv:2610.00320.</li>
+<li>Du et al. Anchoring Refusal Direction: Mitigating Safety Risks in Tuning via Projection Constraint (ProCon). arXiv:2509.06795.</li>
+<li>Ruellan and Benavides-Prado. Preserving Safety During Sequential Fine-Tuning: A Factorial and Geometric Analysis of Replay. arXiv:2610.38001.</li>
+<li>Zhang. Does Safety Live in a Shared Multilingual Subspace? Cross-Lingual (Non-)Transfer of the Refusal Direction. MRL 2026, ACL Anthology 2026.mrl-1.19.</li>
+<li>Safety Kernel: Mechanistic Alignment for Cross-Lingual Defense in LLMs. arXiv:2610.24614.</li>
+<li>Zhao et al. MPO: Multilingual Safety Alignment via Reward Gap Optimization. ACL 2025, arXiv:2505.16869.</li>
+<li>Krasnodebska et al. Multilingual Refusal Alignment for Safer Large Language Models. Findings of ACL 2026, arXiv:2606.07535.</li>
+<li>LSSF: Safety Alignment for LLMs through Low-Rank Safety Subspace Fusion. ACL 2025 (2025.acl-long.1479).</li>
+<li>LoX: Low-Rank Extrapolation Robustifies LLM Safety Against Fine-tuning. arXiv:2506.15606.</li>
+<li>NLSR: Neuron-Level Safety Realignment of LLMs Against Harmful Fine-Tuning. arXiv:2412.12497.</li>
+<li>Wang et al. Refusal Direction is Universal Across Safety-Aligned Languages. arXiv:2505.17306.</li>
+<li>Deng et al. Multilingual Jailbreak Challenges in Large Language Models. arXiv:2310.06474.</li>
+<li>FalseReject: Improving Contextual Safety and Mitigating Over-Refusals via Structured Reasoning. arXiv:2505.08054.</li>
+<li>TamperBench: Systematically Stress-Testing LLM Safety Under Fine-Tuning and Tampering. arXiv:2602.06911.</li>
+<li>Register Shifts Break LLM Safety: A Bengali Benchmark with Culturally Grounded Harms (BanglaSafe). arXiv:2608.22335.</li>
+<li>Arditi et al. Refusal in Language Models Is Mediated by a Single Direction. NeurIPS 2024.</li>
+</ol>
+
+<p class="small" style="margin-top:10pt">Artifacts (public): writeup, two-tier evaluation dataset, repaired checkpoint, and HF collections at huggingface.co/dhairyapandya. Interactive demo: getalife-lexsi-study.vercel.app.</p>
+
+</body>
+</html>
