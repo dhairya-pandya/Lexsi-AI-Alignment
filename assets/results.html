@@ -3,75 +3,75 @@
 <head>
 <meta charset="utf-8">
 <title>Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --page:#F5F5F7; --card:#FFFFFF; --hair:#E8E8ED; --grid:#EDEDF0;
-    --ink:#1D1D1F; --gray:#86868B;
-    --green:#34C759; --green-txt:#248A3D;
-    --red:#FF3B30; --red-txt:#D70015;
-    --blue:#0071E3; --slate:#AEAEB2;
+    --paper:#FAFAF8; --surface:#FFFFFF; --sink:#F3F2EE;
+    --ink:#111111; --muted:#5F5F5A; --faint:#9A9A94; --rule:#E4E4DE;
+    --up:#1F7A4D; --down:#B23B2A; --accent:#1A3C2A;
+    --serif:"Fraunces",Georgia,serif; --sans:"Geist",system-ui,sans-serif; --mono:"Geist Mono",monospace;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{width:1120px;}
-  body{font-family:-apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;
-    background:var(--page); color:var(--ink);
-    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; padding:52px 48px 40px;}
-  svg{display:block;} text{font-family:-apple-system,"SF Pro Text","Helvetica Neue",sans-serif;}
+  body{font-family:var(--sans); background:var(--paper); color:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; padding:50px 46px 40px;}
+  svg{display:block;} text{font-family:var(--mono);}
+  .mark{display:inline-grid; grid-template-columns:repeat(3,1fr); gap:2px; width:14px; height:14px; vertical-align:-2px;}
+  .mark i{background:var(--rule); border-radius:1px;} .mark i.on{background:var(--down);}
 
-  header{text-align:center; margin-bottom:34px;}
-  .eyebrow{font-size:16px; font-weight:600; color:var(--blue); letter-spacing:-.01em; margin-bottom:8px;}
-  h1{font-size:40px; font-weight:700; letter-spacing:-.025em; line-height:1.06;}
-  .lede{font-size:18px; font-weight:400; color:var(--gray); letter-spacing:-.012em; line-height:1.45;
-    max-width:62ch; margin:12px auto 0;}
+  header{text-align:center; margin-bottom:32px;}
+  .eyebrow{font-family:var(--mono); font-size:14px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--down);
+    display:inline-flex; align-items:center; gap:10px; margin-bottom:12px;}
+  h1{font-family:var(--serif); font-optical-sizing:auto; font-size:42px; font-weight:600; letter-spacing:-.018em; line-height:1.04;}
+  h1 .it{font-style:italic; font-weight:500;}
+  .lede{font-family:var(--sans); font-size:18px; color:var(--muted); letter-spacing:-.008em; line-height:1.45; max-width:64ch; margin:12px auto 0;}
 
   .grid{display:grid; grid-template-columns:repeat(6,1fr); gap:16px;}
-  .card{background:var(--card); border-radius:22px; padding:28px 30px;}
+  .card{background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:28px 30px;}
   .c6{grid-column:span 6;} .c3{grid-column:span 3;}
 
-  .k{font-size:13px; font-weight:600; color:var(--blue); letter-spacing:-.005em; margin-bottom:6px;}
-  h2{font-size:23px; font-weight:700; letter-spacing:-.02em;}
-  .note{font-size:15px; font-weight:400; color:var(--gray); letter-spacing:-.01em; line-height:1.45; margin-top:8px;}
+  .k{font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px;}
+  h2{font-family:var(--serif); font-optical-sizing:auto; font-size:24px; font-weight:600; letter-spacing:-.01em;}
+  .note{font-family:var(--sans); font-size:15px; color:var(--muted); letter-spacing:-.006em; line-height:1.5; margin-top:9px;}
   .note b{color:var(--ink); font-weight:600;}
 
-  /* gap card rows */
   .gaprows{margin-top:22px; display:flex; flex-direction:column; gap:20px;}
   .gaprow{display:grid; grid-template-columns:96px 1fr 150px; align-items:center; gap:20px;}
-  .lbl{display:flex; align-items:center; gap:9px; font-size:16px; font-weight:500; color:var(--ink);}
-  .dot{width:10px; height:10px; border-radius:50%;}
-  .dg{background:var(--green);} .dr{background:var(--red);}
-  .track{height:30px; background:var(--grid); border-radius:8px; position:relative; overflow:hidden;}
-  .fill{position:absolute; left:0; top:0; bottom:0; border-radius:8px;}
-  .fg{background:var(--green);} .fr{background:var(--red);}
-  .val{font-size:34px; font-weight:700; letter-spacing:-.02em; text-align:right; font-variant-numeric:tabular-nums;}
-  .vg{color:var(--green-txt);} .vr{color:var(--red-txt);}
-  .val .sep{font-size:.5em; font-weight:500; vertical-align:.2em; margin:0 .03em;}
+  .lbl{font-family:var(--mono); font-size:14px; letter-spacing:.02em; display:flex; align-items:center; gap:9px; color:var(--ink);}
+  .dot{width:9px; height:9px;} .dg{background:var(--up);} .dr{background:var(--down);}
+  .track{height:30px; background:var(--sink); border:1px solid var(--rule); position:relative; overflow:hidden;}
+  .fill{position:absolute; left:0; top:0; bottom:0;}
+  .fg{background:var(--up);} .fr{background:var(--down);}
+  .val{font-family:var(--serif); font-optical-sizing:auto; font-size:34px; font-weight:600; letter-spacing:-.02em; text-align:right; font-variant-numeric:tabular-nums;}
+  .vg{color:var(--up);} .vr{color:var(--down);}
+  .val .sep{font-size:.5em; font-weight:500; vertical-align:.25em; margin:0 .03em;}
   .scale{display:grid; grid-template-columns:96px 1fr 150px; margin-top:12px;}
-  .scale .ticks{grid-column:2; display:flex; justify-content:space-between; font-size:12px; color:var(--slate); font-weight:500;}
+  .scale .ticks{grid-column:2; display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--faint);}
 
-  /* big stat card */
-  .stat-big{font-size:72px; font-weight:700; letter-spacing:-.03em; line-height:1; font-variant-numeric:tabular-nums; margin-top:14px;}
-  .stat-sub{font-size:15px; color:var(--gray); font-weight:400; margin-top:10px; letter-spacing:-.01em; line-height:1.45;}
+  .stat-big{font-family:var(--serif); font-optical-sizing:auto; font-size:68px; font-weight:600; letter-spacing:-.02em; line-height:1; font-variant-numeric:tabular-nums; margin-top:12px; color:var(--ink);}
+  .stat-sub{font-family:var(--sans); font-size:15px; color:var(--muted); margin-top:10px; letter-spacing:-.006em; line-height:1.45;}
   .stat-sub b{color:var(--ink); font-weight:600;}
   .pills{display:flex; gap:8px; margin-top:16px;}
-  .pill{font-size:13px; font-weight:600; padding:5px 12px; border-radius:999px; background:#EAF7EE; color:var(--green-txt);}
+  .pill{font-family:var(--mono); font-size:11.5px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; padding:5px 11px; color:var(--up); border:1px solid var(--up);}
 
-  .legend{display:flex; gap:22px; margin-top:16px; font-size:14px; color:var(--gray); font-weight:500;}
+  .legend{display:flex; gap:20px; margin-top:16px; font-family:var(--mono); font-size:13px; color:var(--muted);}
   .legend span{display:flex; align-items:center; gap:8px;}
-  .sw{width:16px; height:4px; border-radius:2px;} .sw.band{height:12px; opacity:.5;}
+  .sw{width:16px; height:3px;} .sw.band{height:11px; opacity:.4;}
 
-  footer{margin-top:26px; display:flex; justify-content:space-between; font-size:13px; color:var(--gray); letter-spacing:-.005em;}
-  footer b{color:var(--ink); font-weight:600;}
+  footer{margin-top:26px; display:flex; justify-content:space-between; align-items:center; font-family:var(--mono); font-size:12.5px; color:var(--faint); letter-spacing:.04em;}
+  footer b{color:var(--ink); font-weight:500;}
 </style>
 </head>
 <body>
   <header>
-    <div class="eyebrow">Results</div>
-    <h1>The gap, and the repair</h1>
+    <div class="eyebrow"><span class="mark"><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></span>Results</div>
+    <h1>The gap, <span class="it">and the repair</span></h1>
     <div class="lede">What an English-only evaluation misses on Tiny Aya Fire, and the post-hoc fix. Harm is a HarmBench / Qwen3Guard unsafe rate; 95% bootstrap CIs, one seed.</div>
   </header>
 
   <div class="grid">
-    <!-- HERO: the gap -->
     <div class="card c6">
       <div class="k">The finding</div>
       <h2>Same model, two readings</h2>
@@ -91,82 +91,75 @@
       <div class="scale"><div class="ticks"><span>0</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div></div>
     </div>
 
-    <!-- WIDE: the repair line chart -->
     <div class="card c6">
       <div class="k">The repair</div>
       <h2>Remove the attack's top weight directions</h2>
       <div class="note">The attack's weight change <b>dW = W_post − W_base</b> is nearly rank-1. Stripping the top-k singular directions per matrix removes the harmful write and keeps the diffuse benign gain.</div>
       <svg viewBox="0 0 1000 322" width="1000" height="322" style="margin-top:14px" role="img" aria-label="Bengali and English harm versus directions removed">
-        <g stroke="#EDEDF0" stroke-width="1">
+        <g stroke="#E4E4DE" stroke-width="1">
           <line x1="64" y1="280" x2="960" y2="280"/>
           <line x1="64" y1="206.2" x2="960" y2="206.2"/>
           <line x1="64" y1="132.3" x2="960" y2="132.3"/>
           <line x1="64" y1="58.5" x2="960" y2="58.5"/>
         </g>
-        <g fill="#AEAEB2" font-size="12.5" font-weight="500" text-anchor="end">
+        <g fill="#9A9A94" font-size="12.5" font-weight="500" text-anchor="end">
           <text x="52" y="284">0</text><text x="52" y="210">20%</text><text x="52" y="136">40%</text><text x="52" y="62">60%</text>
         </g>
         <polygon points="64,66 288,202.5 512,202.5 736,217.2 960,232 960,265.2 736,258 512,250.5 288,246.8 64,125"
-                 fill="#FF3B30" opacity="0.10"/>
-        <polyline points="64,95.4 288,228.3 512,228.3 736,239.4 960,250.5" fill="none" stroke="#FF3B30" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <polyline points="64,209.8 288,272.6 512,272.6 736,276.3 960,276.3" fill="none" stroke="#34C759" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <g fill="#FF3B30"><circle cx="64" cy="95.4" r="5.5"/><circle cx="288" cy="228.3" r="5.5"/><circle cx="512" cy="228.3" r="5.5"/><circle cx="736" cy="239.4" r="5.5"/><circle cx="960" cy="250.5" r="5.5"/></g>
-        <g fill="#34C759"><circle cx="64" cy="209.8" r="4.5"/><circle cx="288" cy="272.6" r="4.5"/><circle cx="512" cy="272.6" r="4.5"/><circle cx="736" cy="276.3" r="4.5"/><circle cx="960" cy="276.3" r="4.5"/></g>
-        <g fill="#D70015" font-size="14" font-weight="700" text-anchor="middle">
+                 fill="#B23B2A" opacity="0.10"/>
+        <polyline points="64,95.4 288,228.3 512,228.3 736,239.4 960,250.5" fill="none" stroke="#B23B2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="64,209.8 288,272.6 512,272.6 736,276.3 960,276.3" fill="none" stroke="#1F7A4D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <g fill="#B23B2A"><rect x="59.5" y="90.9" width="9" height="9"/><rect x="283.5" y="223.8" width="9" height="9"/><rect x="507.5" y="223.8" width="9" height="9"/><rect x="731.5" y="234.9" width="9" height="9"/><rect x="955.5" y="246" width="9" height="9"/></g>
+        <g fill="#1F7A4D"><rect x="60.5" y="206.3" width="7" height="7"/><rect x="284.5" y="269.1" width="7" height="7"/><rect x="508.5" y="269.1" width="7" height="7"/><rect x="732.5" y="272.8" width="7" height="7"/><rect x="956.5" y="272.8" width="7" height="7"/></g>
+        <g fill="#B23B2A" font-size="14" font-weight="600" text-anchor="middle">
           <text x="64" y="82">50%</text><text x="288" y="216">14%</text><text x="736" y="227">11%</text><text x="960" y="238">8%</text>
         </g>
-        <g fill="#86868B" font-size="13.5" font-weight="600" text-anchor="middle">
+        <g fill="#5F5F5A" font-size="13.5" font-weight="500" text-anchor="middle">
           <text x="64" y="306">k=0</text><text x="288" y="306">k=1</text><text x="512" y="306">k=2</text><text x="736" y="306">k=4</text><text x="960" y="306">k=8</text>
         </g>
       </svg>
       <div class="legend">
-        <span><span class="sw" style="background:#FF3B30"></span>Bengali harm</span>
-        <span><span class="sw" style="background:#34C759"></span>English harm</span>
-        <span><span class="sw band" style="background:#FF3B30"></span>95% CI</span>
-        <span style="margin-left:auto;color:#AEAEB2;">singular directions of dW removed, per weight matrix</span>
+        <span><span class="sw" style="background:#B23B2A"></span>Bengali harm</span>
+        <span><span class="sw" style="background:#1F7A4D"></span>English harm</span>
+        <span><span class="sw band" style="background:#B23B2A"></span>95% CI</span>
+        <span style="margin-left:auto;color:#9A9A94;">directions of dW removed, per matrix</span>
       </div>
     </div>
 
-    <!-- capability -->
     <div class="card c3">
       <div class="k">Capability</div>
       <h2>The fix is not degeneration</h2>
-      <div class="stat-big" style="color:var(--ink)">0.56</div>
+      <div class="stat-big">0.56</div>
       <div class="stat-sub">MMLU at the repair (<b>0.55</b> before, 0.50–0.58 across all k). Over-refusal rises modestly, 5% to 16%.</div>
       <div class="pills"><span class="pill">capability preserved</span></div>
     </div>
 
-    <!-- prevention failed -->
     <div class="card c3">
       <div class="k">The counterpart test</div>
       <h2>Prevention does not work</h2>
       <div class="note" style="margin-bottom:4px">Anchoring the refusal subspace during fine-tuning. Bengali harm after the attack:</div>
       <svg viewBox="0 0 470 176" width="470" height="176" role="img" aria-label="Bengali harm for no anchor, English anchor, union anchor">
-        <!-- scale 0..0.40 over x 150..440 (width 290) -->
-        <g stroke="#EDEDF0" stroke-width="1">
+        <g stroke="#E4E4DE" stroke-width="1">
           <line x1="150" y1="6" x2="150" y2="150"/><line x1="222.5" y1="6" x2="222.5" y2="150"/>
           <line x1="295" y1="6" x2="295" y2="150"/><line x1="367.5" y1="6" x2="367.5" y2="150"/><line x1="440" y1="6" x2="440" y2="150"/>
         </g>
-        <g fill="#AEAEB2" font-size="11.5" font-weight="500" text-anchor="middle">
+        <g fill="#9A9A94" font-size="11.5" font-weight="500" text-anchor="middle">
           <text x="150" y="168">0</text><text x="222.5" y="168">10%</text><text x="295" y="168">20%</text><text x="367.5" y="168">30%</text><text x="440" y="168">40%</text>
         </g>
-        <!-- none .22 => width .22/.40*290=159.5 -->
         <g>
-          <text x="140" y="29" fill="#1D1D1F" font-size="13.5" font-weight="500" text-anchor="end">no anchor</text>
-          <rect x="150" y="12" width="159.5" height="22" rx="6" fill="#AEAEB2"/>
-          <text x="319" y="30" fill="#1D1D1F" font-size="14" font-weight="700">0.22</text>
+          <text x="140" y="29" fill="#111111" font-size="13.5" font-weight="500" text-anchor="end">no anchor</text>
+          <rect x="150" y="12" width="159.5" height="22" fill="#9A9A94"/>
+          <text x="319" y="30" fill="#111111" font-size="14" font-weight="600">0.22</text>
         </g>
-        <!-- en .22 -->
         <g>
-          <text x="140" y="73" fill="#1D1D1F" font-size="13.5" font-weight="500" text-anchor="end">anchor en</text>
-          <rect x="150" y="56" width="159.5" height="22" rx="6" fill="#34C759"/>
-          <text x="319" y="74" fill="#1D1D1F" font-size="14" font-weight="700">0.22</text>
+          <text x="140" y="73" fill="#111111" font-size="13.5" font-weight="500" text-anchor="end">anchor en</text>
+          <rect x="150" y="56" width="159.5" height="22" fill="#1F7A4D"/>
+          <text x="319" y="74" fill="#111111" font-size="14" font-weight="600">0.22</text>
         </g>
-        <!-- union .33 => .33/.40*290=239.25 -->
         <g>
-          <text x="140" y="117" fill="#1D1D1F" font-size="13.5" font-weight="500" text-anchor="end">anchor en+bn+hi</text>
-          <rect x="150" y="100" width="239.25" height="22" rx="6" fill="#FF3B30"/>
-          <text x="398" y="118" fill="#D70015" font-size="14" font-weight="700">0.33</text>
+          <text x="140" y="117" fill="#111111" font-size="13.5" font-weight="500" text-anchor="end">anchor en+bn+hi</text>
+          <rect x="150" y="100" width="239.25" height="22" fill="#B23B2A"/>
+          <text x="398" y="118" fill="#B23B2A" font-size="14" font-weight="600">0.33</text>
         </g>
       </svg>
       <div class="note"><b>Repair beats prevention.</b> English anchoring changes nothing; the union is worse.</div>

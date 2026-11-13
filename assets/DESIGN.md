@@ -1,57 +1,60 @@
-# Design system: Apple HIG
+# Design system: ink on paper
 
-The visual language for this project's banner and figures, built on Apple's Human Interface Guidelines: **San Francisco** type, generous whitespace, a centered hero, **bento** cards, and Apple's own **system colors** carrying the safety semantics.
+The visual language for this project's site and figures. Ink on warm paper, a tall high-contrast serif for voice, a monospace for data, hairline rules and square structure, with one 3x3 grid mark as the motif. Colour carries meaning, never decoration, and there is exactly one loud moment per view.
 
-## Principle: Apple's system colors are the semantics
+Adapted from the *Udte-Bhawre* design language (its paper chrome and "bold in one place" rule), retuned for a safety-evaluation study.
 
-The finding is a safety verdict, so it uses Apple's safety palette directly, with no invented accent:
+## Principle: colour is the verdict
 
-- **systemGreen** = English / contained / safe
-- **systemRed** = Bengali / exposed / harmful
-- **systemBlue** = section labels and links only
+Two system colours do all the semantic work, so a reader never needs a legend:
 
-A reader fluent in Apple software already knows green-good / red-bad; the figures lean on that, not on a legend.
+- **forest green `#1F7A4D`** = English / contained / safe
+- **rust `#B23B2A`** = Bengali / exposed / harmful
+- amber `#B07A1E` = a null or partial result; faint gray for a control
+
+Everything else is ink on paper. The single boldest element in any view (the Bengali `59–61%` serif numeral) is the one place the eye is pulled.
 
 ## Tokens
 
 ```
---page      #F5F5F7   Apple light-gray canvas
---card      #FFFFFF   bento card
---hair      #E8E8ED   dividers
---ink       #1D1D1F   label / primary text (Apple's near-black)
---gray      #86868B   secondary text
---blue      #0071E3   systemBlue, eyebrows and links
---green     #34C759   systemGreen, bars/lines/dots
---green-txt #248A3D   accessible green for text on white
---red       #FF3B30   systemRed, bars/lines/dots
---red-txt   #D70015   accessible red for text on white
+--paper      #FAFAF8   warm paper canvas
+--surface    #FFFFFF   card
+--sink       #F3F2EE   track / code well
+--ink        #111111   primary text
+--muted      #5F5F5A   secondary text
+--faint      #9A9A94   ticks, captions
+--rule       #E4E4DE   hairline borders and gridlines
+--up         #1F7A4D   forest green  (safe / English)
+--down       #B23B2A   rust          (harmful / Bengali)
+--accent     #1A3C2A   deep forest   (one bold moment, button hover)
 ```
 
-Card radius **22px**. Grid gap **16px**. Whitespace is a material, not a leftover.
+A full dark theme mirrors every token (paper `#121210`, ink `#ECEBE5`, up `#5CC98F`, down `#EF7D6B`), applied by `prefers-color-scheme` and a `data-theme` override.
+
+Cards are **square-ish**: 6px radius, **1px solid `--rule`** border, no shadows, no gradients. Whitespace and hairlines do the separating.
 
 ## Type
 
-- **San Francisco** via `-apple-system, "SF Pro Display", "SF Pro Text"`. On macOS this is the real system font; rasterized with headless Chrome so it renders authentically.
-- Scale follows Apple marketing: a large tight headline (weight 700, tracking −0.025em), a calm gray sub-headline (weight 400), SF for every label and number.
-- Tabular figures on all data. A range like `0–4%` wraps the dash in a small, raised `.sep` span so it reads as "0 to 4", never as a strikethrough through the digits.
+- **Fraunces** (optical-sizing on) for every headline and every large numeral: tall, high-contrast, italic for the second half of a title. The free stand-in for *Awesome Serif*.
+- **Geist** for body and sub-text.
+- **Geist Mono** for eyebrows, labels, ticks, tags, and small data, the "counter voice". Eyebrows are mono, uppercase, letter-spaced, in rust.
 
-## Layout
+All data uses tabular figures. A range like `0–4%` wraps the dash in a small raised `.sep` span so it reads as "0 to 4", never as a strikethrough.
 
-- **Banner:** a centered Apple product-page hero: eyebrow, one short two-sentence headline (`One model. Two verdicts.`), a gray sub, then the two numbers split by a hairline divider. Everything centered, lots of air.
-- **Results:** an Apple **bento grid**: white rounded cards on the gray canvas, mixed spans (a full-width hero, a full-width chart, a two-up row). Each card carries a blue eyebrow, a bold title, and one chart or one big number.
+## Motif
 
-Charts are minimal: hairline gridlines (`#EDEDF0`), 3px rounded system-color lines, a faint red CI band, SF labels. No frames, no shadows stacked on everything, no decoration, the Apple restraint.
+A **3x3 grid mark** (nine cells, one lit rust) sits by the wordmark and each eyebrow. Data markers are **squares**, not dots, echoing the grid. Charts are minimal: hairline gridlines, 2.5px rust/forest lines, a faint rust CI band, mono labels. No frames stacked on frames.
 
 ## Regenerating the assets
 
-Authored as HTML (`banner.html`, `results.html`), rasterized with headless Chrome at 2× so SF Pro renders:
+Authored as HTML, rasterised with headless Chrome at 2x (Fraunces, Geist and Geist Mono load from Google Fonts):
 
 ```bash
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"   # any Chrome/Chromium on macOS
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 "$CHROME" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
-  --virtual-time-budget=2500 --window-size=1280,500  --screenshot=banner.png  banner.html
+  --virtual-time-budget=3000 --window-size=1280,500  --screenshot=banner.png  banner.html
 "$CHROME" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
-  --virtual-time-budget=2500 --window-size=1120,1560 --screenshot=results.png results.html
+  --virtual-time-budget=3000 --window-size=1120,1560 --screenshot=results.png results.html
 ```
 
-Edit the HTML, re-run, done. The PNGs are committed so the README renders without a build step.
+The live site (`site/index.html`) and the animation (`anim/repair_scene.py`) use the same tokens. Edit the HTML, re-run, done. The PNGs are committed so the README renders without a build step.

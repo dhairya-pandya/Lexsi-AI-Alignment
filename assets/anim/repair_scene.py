@@ -10,22 +10,28 @@ Render:
 import numpy as np
 from manim import *
 
-# Palette (Apple system colors on a near-black canvas)
-BG      = "#0E0E12"
-INK     = "#F2F2F7"
-SUB     = "#9A9AA2"
-GREEN   = "#34C759"
-RED     = "#FF3B30"
-BLUE    = "#0A84FF"
-AMBER   = "#FF9F0A"
-HAIR    = "#3A3A40"
+# Palette: ink on warm paper (the project design system)
+BG      = "#FAFAF8"   # warm paper
+INK     = "#111111"
+SUB     = "#5F5F5A"
+GREEN   = "#1F7A4D"   # forest, safe / English
+RED     = "#B23B2A"   # rust, harmful / Bengali
+BLUE    = "#1A3C2A"   # deep forest accent
+AMBER   = "#B07A1E"
+HAIR    = "#D7D7D1"   # hairline gridlines
+FAINT   = "#9A9A94"
 
 config.background_color = BG
-FONT = "Helvetica Neue"  # Pango falls back gracefully if absent
+FONT  = "Geist"       # sans body; Pango falls back gracefully if absent
+SERIF = "Fraunces"    # tall serif for headlines; falls back to a system serif
 
 
 def txt(s, size=36, color=INK, weight=NORMAL, slant=NORMAL):
     return Text(s, font=FONT, font_size=size, color=color, weight=weight, slant=slant)
+
+
+def stxt(s, size=48, color=INK, weight=SEMIBOLD, slant=NORMAL):
+    return Text(s, font=SERIF, font_size=size, color=color, weight=weight, slant=slant)
 
 
 def heat(values, vmin, vmax, base_color, cell=0.52, gap=0.06):
@@ -56,9 +62,9 @@ class LowRankRepair(Scene):
 
     # -- 0. title -------------------------------------------------------------
     def title_card(self):
-        ey = txt("CROSS-LINGUAL TAMPER RESISTANCE", 22, BLUE, weight=BOLD)
-        t1 = txt("How a low-rank repair", 56, INK, weight=BOLD)
-        t2 = txt("made the model safe again", 56, INK, weight=BOLD)
+        ey = txt("CROSS-LINGUAL TAMPER RESISTANCE", 22, RED, weight=MEDIUM)
+        t1 = stxt("How a low-rank repair", 58, INK, weight=SEMIBOLD)
+        t2 = stxt("made the model safe again", 58, INK, weight=SEMIBOLD)
         sub = txt("the linear algebra of the defense", 30, SUB)
         ey.to_edge(UP, buff=1.3)
         grp = VGroup(t1, t2).arrange(DOWN, buff=0.15).move_to(ORIGIN)
@@ -77,8 +83,8 @@ class LowRankRepair(Scene):
         rng = np.random.default_rng(7)
         n = 7
         Wb = rng.normal(0, 1, (n, n))
-        hb = heat(Wb, 0, 2.4, BLUE).scale(0.9)
-        lb = txt("W_base", 28, BLUE).next_to(hb, DOWN, buff=0.3)
+        hb = heat(Wb, 0, 2.4, FAINT).scale(0.9)
+        lb = txt("W_base", 28, SUB).next_to(hb, DOWN, buff=0.3)
         g_base = VGroup(hb, lb).to_edge(LEFT, buff=1.0)
 
         # a nearly rank-1 update: one dominant outer product + faint noise
@@ -127,7 +133,7 @@ class LowRankRepair(Scene):
         bw, maxh, gap = 0.9, 3.4, 0.35
         x0 = -((len(energy) - 1) * (bw + gap)) / 2
         for i, e in enumerate(energy):
-            col = RED if i == 0 else (AMBER if i == 1 else HAIR)
+            col = RED if i == 0 else (AMBER if i == 1 else FAINT)
             b = Rectangle(width=bw, height=maxh * e, stroke_width=0).set_fill(col, opacity=1.0)
             b.move_to(np.array([x0 + i * (bw + gap), -1.5 + maxh * e / 2, 0]))
             bars.add(b)
@@ -246,9 +252,9 @@ class LowRankRepair(Scene):
 
     # -- end ------------------------------------------------------------------
     def end_card(self):
-        t1 = txt("Repair beats prevention.", 44, INK, weight=BOLD)
+        t1 = stxt("Repair beats prevention.", 46, INK, weight=SEMIBOLD)
         t2 = txt("Post-hoc. Training-free. Low-rank.", 30, SUB)
-        url = txt("getalife-lexsi-study.vercel.app", 26, BLUE)
+        url = txt("getalife-lexsi-study.vercel.app", 26, RED)
         g = VGroup(t1, t2).arrange(DOWN, buff=0.3).move_to(ORIGIN)
         url.next_to(g, DOWN, buff=0.7)
         self.play(Write(t1), run_time=1.0)
