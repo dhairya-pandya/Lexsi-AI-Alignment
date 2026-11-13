@@ -8,3 +8,5 @@ results/**/cache*.jsonl
 *.gguf
 .DS_Store
 *.egg-info/
+.venv-manim/
+media/
