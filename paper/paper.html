@@ -4,65 +4,144 @@
 <meta charset="utf-8">
 <title>Cross-Lingual Tamper Resistance of Fine-Tuning-Stage Safety Defenses</title>
 <style>
-  @page { size: letter; margin: 22mm 20mm; }
-  :root{ --ink:#111; --muted:#444; --rule:#bbb; --soft:#f2f2f0; }
+  @page { size: letter; margin: 18mm 16mm; }
+  :root{ --ink:#111; --muted:#444; --rule:#b9b9b9; --soft:#f3f3f1;
+         --rust:#B23B2A; --forest:#1F7A4D; --blue:#24488f; --tint:#f7f4f2; }
   *{ box-sizing:border-box; }
-  html{ font-size:10.5pt; }
-  body{
-    font-family: Georgia, "Times New Roman", serif; color:var(--ink);
-    line-height:1.42; margin:0; hyphens:auto; text-align:justify;
-  }
-  h1,h2,h3,h4{ font-family:"Helvetica Neue", Arial, sans-serif; line-height:1.2; }
-  h1{ font-size:18pt; text-align:center; margin:0 0 4pt; letter-spacing:-.01em; }
-  .authors{ text-align:center; font-family:"Helvetica Neue",Arial,sans-serif; font-size:10.5pt; margin:6pt 0 2pt; }
-  .affil{ text-align:center; font-size:9pt; color:var(--muted); margin-bottom:12pt; font-family:"Helvetica Neue",Arial,sans-serif; }
-  h2{ font-size:12pt; margin:16pt 0 5pt; }
-  h3{ font-size:10.5pt; margin:11pt 0 3pt; }
-  p{ margin:0 0 6pt; }
-  .abstract{ background:var(--soft); border:0.5pt solid var(--rule); padding:9pt 12pt; margin:0 0 6pt; font-size:9.6pt; }
-  .abstract h2{ font-size:10pt; margin:0 0 4pt; }
-  .kw{ font-size:9pt; color:var(--muted); margin-bottom:10pt; }
-  code,.mono{ font-family:"SF Mono", Menlo, Consolas, monospace; font-size:9pt; background:var(--soft); padding:0 2px; }
-  table{ border-collapse:collapse; width:100%; font-size:8.8pt; margin:6pt 0 4pt; break-inside:avoid;
-    font-family:"Helvetica Neue",Arial,sans-serif; }
-  caption{ caption-side:top; text-align:left; font-size:8.6pt; color:var(--muted); margin-bottom:3pt; font-family:Georgia,serif; }
-  th,td{ border-bottom:0.5pt solid var(--rule); padding:3pt 6pt; text-align:center; }
-  th{ border-top:0.75pt solid var(--ink); border-bottom:0.75pt solid var(--ink); font-weight:600; }
+  html{ font-size:9.6pt; }
+  body{ font-family:"Times New Roman", Georgia, serif; color:var(--ink);
+    line-height:1.38; margin:0; }
+  h1,h2,h3,.sans{ font-family:"Helvetica Neue", Arial, sans-serif; }
+  /* masthead (full width) */
+  .mast{ text-align:center; }
+  h1{ font-size:16.5pt; line-height:1.18; margin:0 0 6pt; letter-spacing:-.01em; }
+  .authors{ font-size:11pt; margin:4pt 0 1pt; }
+  .affil{ font-size:8.6pt; color:var(--muted); margin-bottom:10pt; }
+  .abstract{ column-span:all; background:var(--soft); border:0.5pt solid var(--rule);
+    padding:8pt 11pt; margin:0 0 4pt; }
+  .abstract h2{ font-size:9.5pt; margin:0 0 3pt; }
+  .abstract p{ font-size:9pt; text-align:justify; margin:0; }
+  .kw{ column-span:all; font-size:8.6pt; color:var(--muted); margin:0 0 10pt; }
+  /* two-column body */
+  .cols{ column-count:2; column-gap:7mm; column-fill:balance; }
+  .cols p{ margin:0 0 5pt; text-align:justify; hyphens:auto; }
+  h2{ font-size:10.5pt; margin:10pt 0 4pt; }
+  h3{ font-size:9.6pt; margin:8pt 0 2pt; font-style:normal; }
+  code,.mono{ font-family:"SF Mono", Menlo, Consolas, monospace; font-size:8.3pt; }
+  ul{ margin:0 0 5pt; padding-left:13pt; } li{ margin-bottom:2.5pt; text-align:justify; }
+  /* figures + tables */
+  figure{ margin:4pt 0 6pt; }
+  figure.span, table.span{ column-span:all; }
+  figure img, figure svg{ width:100%; display:block; border:0.4pt solid var(--rule); background:#fff; }
+  figure svg{ border:none; }
+  .cap{ font-size:8.3pt; color:var(--muted); text-align:justify; margin-top:3pt; }
+  .cap b{ color:var(--ink); }
+  table{ border-collapse:collapse; width:100%; font-size:8.2pt; margin:3pt 0;
+    font-family:"Helvetica Neue", Arial, sans-serif; }
+  caption{ caption-side:top; text-align:left; font-size:8.2pt; color:var(--muted);
+    margin-bottom:2pt; font-family:"Times New Roman",serif; }
+  th,td{ border-bottom:0.4pt solid var(--rule); padding:2.5pt 5pt; text-align:center; }
+  th{ border-top:0.7pt solid var(--ink); border-bottom:0.7pt solid var(--ink); font-weight:600; }
   td:first-child, th:first-child{ text-align:left; }
-  tr:last-child td{ border-bottom:0.75pt solid var(--ink); }
-  .fig{ text-align:center; margin:8pt 0; break-inside:avoid; }
-  .fig img{ width:100%; max-width:100%; border:0.5pt solid var(--rule); }
-  .fig .cap{ font-size:8.6pt; color:var(--muted); text-align:left; margin-top:3pt; }
-  ol.refs{ font-size:8.6pt; line-height:1.3; padding-left:16pt; }
-  ol.refs li{ margin-bottom:2.5pt; }
-  .contrib li{ margin-bottom:3pt; }
-  .small{ font-size:9pt; color:var(--muted); }
+  tr:last-child td{ border-bottom:0.7pt solid var(--ink); }
+  ol.refs{ column-span:all; font-size:7.9pt; line-height:1.28; padding-left:14pt;
+    column-count:2; column-gap:7mm; }
+  ol.refs li{ margin-bottom:2pt; break-inside:avoid; }
+  hr{ border:0; border-top:0.5pt solid var(--rule); margin:8pt 0; column-span:all; }
+  .small{ font-size:8.3pt; color:var(--muted); }
   strong{ font-weight:600; }
-  hr{ border:0; border-top:0.5pt solid var(--rule); margin:10pt 0; }
+  .svgtxt{ font-family:"Helvetica Neue",Arial,sans-serif; }
 </style>
 </head>
 <body>
 
-<h1>Does Safety Survive an Attack in Another Language?<br>Cross-Lingual Tamper Resistance of Fine-Tuning-Stage Safety Defenses</h1>
-<div class="authors">Dhairya Pandya &nbsp;&middot;&nbsp; runtime-terror &nbsp;&middot;&nbsp; ByteKnight28</div>
-<div class="affil">Lexsi AI Safety &amp; Alignment Hackathon, 2026 &nbsp;|&nbsp; Models and data: huggingface.co/dhairyapandya</div>
+<div class="mast">
+  <h1>Does Safety Survive an Attack in Another Language?<br>Cross-Lingual Tamper Resistance of Fine-Tuning-Stage Safety Defenses</h1>
+  <div class="authors">Dhairya Pandya &nbsp;&nbsp; Shantanu Kharwar &nbsp;&nbsp; Rounak Agarwal</div>
+  <div class="affil">Lexsi AI Safety &amp; Alignment Hackathon, 2026 &nbsp;&middot;&nbsp; Artifacts: huggingface.co/dhairyapandya &nbsp;&middot;&nbsp; Demo: getalife-lexsi-study.vercel.app</div>
+</div>
 
 <div class="abstract">
 <h2>Abstract</h2>
 <p>Model providers that offer fine-tuning as a service apply safety defenses (Lisa, Vaccine, Booster, RepNoise) to stop a customer's fine-tune from stripping a model's safety. These defenses are built and evaluated almost entirely in English. Two lines of prior work set up our question: fine-tuning attacks transfer across languages, and post-hoc low-rank edits can restore safety after a harmful fine-tune in English. We connect them in the cross-lingual tamper setting. We defend <span class="mono">tiny-aya-fire</span> with the standard toolkit, run a poisoned fine-tune in Bengali, and evaluate in both languages. The same defended model refuses almost every harmful English prompt (0&ndash;4% harm) while answering 59&ndash;61% of harmful Bengali ones, a gap an English-only evaluation certifies as robust. Adding target-language safety data barely helps (0.57 to 0.46 harm), because the attack overwrites the safety that is added. We trace the damage to a near rank-one weight write and show it is repairable post hoc: removing the top one or two singular directions of the attack's weight update per matrix drops Bengali harm 50% to 14% with MMLU preserved. A training-time prevention variant (subspace anchoring) does not close the gap and sometimes widens it, so repair beats prevention. Our contribution is the combination, not a new primitive: a low-rank post-hoc repair evaluated in the attacker's language, the demonstration that an English-only evaluation hides the gap, and the prevention-versus-repair result. Results are one seed and one model.</p>
 </div>
-<div class="kw"><strong>Keywords:</strong> LLM safety, harmful fine-tuning, tamper resistance, multilingual, red teaming, low-rank repair.</div>
+<div class="kw"><strong>Keywords:</strong> LLM safety, harmful fine-tuning, tamper resistance, multilingual safety, red teaming, low-rank repair.</div>
+
+<!-- FIGURE 1: overview / pipeline (full width) -->
+<figure class="span">
+<svg viewBox="0 0 1000 300" class="svgtxt" role="img" aria-label="Overview pipeline">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#333"/></marker>
+  </defs>
+  <style>
+    .bx{fill:#fff;stroke:#333;stroke-width:1.2;rx:6;}
+    .lbl{font-size:15px;fill:#111;} .sub{font-size:12px;fill:#555;}
+    .hd{font-size:13px;font-weight:700;letter-spacing:.06em;}
+    .ln{stroke:#333;stroke-width:1.4;fill:none;}
+  </style>
+  <!-- row 1: attack pipeline -->
+  <text x="18" y="24" class="hd" fill="#B23B2A">THE ATTACK PATH</text>
+  <rect class="bx" x="18" y="40" width="150" height="58" rx="6" fill="#fff"/>
+  <text x="93" y="64" text-anchor="middle" class="lbl">Aligned model</text>
+  <text x="93" y="82" text-anchor="middle" class="sub">Tiny Aya Fire</text>
+
+  <line class="ln" x1="168" y1="69" x2="210" y2="69" marker-end="url(#ar)"/>
+  <rect class="bx" x="212" y="40" width="168" height="58" rx="6" fill="#eef3ef"/>
+  <text x="296" y="62" text-anchor="middle" class="lbl">English-trained</text>
+  <text x="296" y="80" text-anchor="middle" class="sub">defense (Lisa/Vaccine/…)</text>
+
+  <line class="ln" x1="380" y1="69" x2="422" y2="69" marker-end="url(#ar)"/>
+  <rect class="bx" x="424" y="40" width="162" height="58" rx="6" fill="#f7e7e3" stroke="#B23B2A"/>
+  <text x="505" y="62" text-anchor="middle" class="lbl" fill="#B23B2A">Bengali attack</text>
+  <text x="505" y="80" text-anchor="middle" class="sub">poisoned fine-tune</text>
+
+  <line class="ln" x1="586" y1="69" x2="628" y2="69" marker-end="url(#ar)"/>
+  <rect class="bx" x="630" y="40" width="150" height="58" rx="6"/>
+  <text x="705" y="64" text-anchor="middle" class="lbl">Evaluate</text>
+  <text x="705" y="82" text-anchor="middle" class="sub">both languages</text>
+
+  <line class="ln" x1="780" y1="69" x2="822" y2="69" marker-end="url(#ar)"/>
+  <!-- two verdicts -->
+  <rect x="824" y="40" width="158" height="26" rx="4" fill="#e7f1ea" stroke="#1F7A4D" stroke-width="1"/>
+  <circle cx="840" cy="53" r="4" fill="#1F7A4D"/>
+  <text x="852" y="57" class="sub" fill="#1F7A4D">English&nbsp; 0&ndash;4% harm</text>
+  <rect x="824" y="72" width="158" height="26" rx="4" fill="#f7e7e3" stroke="#B23B2A" stroke-width="1"/>
+  <circle cx="840" cy="85" r="4" fill="#B23B2A"/>
+  <text x="852" y="89" class="sub" fill="#B23B2A">Bengali&nbsp; 59&ndash;61% harm</text>
+
+  <text x="982" y="124" text-anchor="end" class="sub" font-style="italic">English-only eval sees only the green bar</text>
+
+  <!-- row 2: the fix -->
+  <text x="18" y="186" class="hd" fill="#24488f">THE FIX (THIS WORK)</text>
+  <rect class="bx" x="18" y="202" width="158" height="58" rx="6" fill="#f7e7e3" stroke="#B23B2A"/>
+  <text x="97" y="226" text-anchor="middle" class="lbl" fill="#B23B2A">Bengali 59&ndash;61%</text>
+  <text x="97" y="244" text-anchor="middle" class="sub">attacked, unsafe</text>
+
+  <line class="ln" x1="176" y1="231" x2="224" y2="231" marker-end="url(#ar)"/>
+  <rect class="bx" x="226" y="196" width="330" height="70" rx="6" fill="#e9eef7" stroke="#24488f"/>
+  <text x="391" y="222" text-anchor="middle" class="lbl" fill="#24488f">Low-rank repair (post-hoc, training-free)</text>
+  <text x="391" y="242" text-anchor="middle" class="sub">project out top-k singular directions of dW = W_post &minus; W_base</text>
+
+  <line class="ln" x1="556" y1="231" x2="604" y2="231" marker-end="url(#ar)"/>
+  <rect class="bx" x="606" y="202" width="180" height="58" rx="6" fill="#e7f1ea" stroke="#1F7A4D"/>
+  <text x="696" y="226" text-anchor="middle" class="lbl" fill="#1F7A4D">English + Bengali safe</text>
+  <text x="696" y="244" text-anchor="middle" class="sub">Bengali harm 14%, MMLU kept</text>
+</svg>
+<figcaption class="cap"><strong>Figure 1.</strong> Overview. An English-trained fine-tuning-stage defense survives a Bengali attack when measured in English but fails when measured in Bengali, so an English-only evaluation certifies an unsafe model (top). A post-hoc low-rank repair that projects out the top singular directions of the attack's weight update restores safety in both languages without retraining (bottom).</figcaption>
+</figure>
+
+<div class="cols">
 
 <h2>1. Introduction</h2>
 <p>Fine-tuning as a service lets a customer adapt a provider's model, and it also lets a malicious customer try to remove the model's refusals. Fine-tuning-stage defenses answer this threat: the provider hardens the model (Vaccine, Booster, RepNoise) or constrains the customer's fine-tune (Lisa) so that a poisoned fine-tune cannot strip safety. These defenses are developed and benchmarked almost entirely in English.</p>
 <p>This paper asks whether that English-centric evaluation hides a failure mode. An attacker is not obliged to poison in English. If the attack data is in Hindi or Bengali, two questions follow. First, does the English-trained defense still hold, and does it hold <em>in the attacker's language</em>? Second, and more dangerous for a provider, would an English-only evaluation notice if it did not?</p>
-<p>We find the answer to both is no. Under a Bengali fine-tuning attack, a defended model stays safe in English and becomes unsafe in Bengali, and an English-only dashboard reports only the safe half. We then show the damage has exploitable structure: the attack's weight update is nearly rank one, so projecting out its top singular directions is a cheap, training-free repair that restores multilingual safety without hurting capability. The training-time counterpart, anchoring the refusal subspace during the fine-tune, does not work.</p>
+<p>We find the answer to both is no. Under a Bengali fine-tuning attack, a defended model stays safe in English and becomes unsafe in Bengali, and an English-only dashboard reports only the safe half (Figure 1). We then show the damage has exploitable structure: the attack's weight update is nearly rank one, so projecting out its top singular directions is a cheap, training-free repair that restores multilingual safety without hurting capability. The training-time counterpart, anchoring the refusal subspace during the fine-tune, does not work.</p>
 <p><strong>Contributions.</strong></p>
-<ul class="contrib">
-<li>We show that English-trained fine-tuning-stage defenses are <em>language-local</em>: after a Bengali attack, English harm is 0&ndash;4% while Bengali harm is 59&ndash;61%, so an English-only evaluation wrongly certifies robustness (Section 5.1).</li>
-<li>We show the gap is a tamper problem, not a coverage gap: adding translated Bengali safety data moves harm only 0.57 to 0.46, because the attack overwrites it (Section 5.2).</li>
-<li>We give a post-hoc, training-free repair that projects out the top singular directions of the attack's weight update and cuts Bengali harm 50% to 14% at rank one, with MMLU preserved (Section 5.3).</li>
-<li>We show the training-time prevention counterpart (subspace anchoring) fails and can make things worse, so repair beats prevention in this setting (Section 5.4).</li>
+<ul>
+<li>We show English-trained fine-tuning-stage defenses are <em>language-local</em>: after a Bengali attack, English harm is 0&ndash;4% while Bengali harm is 59&ndash;61%, so an English-only evaluation wrongly certifies robustness (Sec. 5.1).</li>
+<li>We show the gap is a tamper problem, not a coverage gap: adding translated Bengali safety data moves harm only 0.57 to 0.46, because the attack overwrites it (Sec. 5.2).</li>
+<li>We give a post-hoc, training-free repair that projects out the top singular directions of the attack's weight update and cuts Bengali harm 50% to 14% at rank one, with MMLU preserved (Sec. 5.3).</li>
+<li>We show the training-time prevention counterpart (subspace anchoring) fails and can make things worse, so repair beats prevention here (Sec. 5.4).</li>
 </ul>
 <p>We claim no new mechanism. Cross-lingual fragility and low-rank safety repair are both known. The contribution is their intersection, the English-only blind spot, and the prevention-versus-repair result, on one seed and one model.</p>
 
@@ -73,15 +152,13 @@
 
 <h2>3. Threat Model and Method</h2>
 <h3>3.1 Threat model</h3>
-<p>A provider exposes fine-tuning of an aligned chat model. An attacker submits a small poisoned dataset to remove refusals, mixing benign task data with a harmful fraction. The provider applies a fine-tuning-stage defense and wants the resulting model to refuse harmful requests in every language. The attacker chooses the language of the poison. The provider's only guaranteed artifact is the pair of weights before and after the customer fine-tune, which is what our repair uses.</p>
+<p>A provider exposes fine-tuning of an aligned chat model. An attacker submits a small poisoned dataset to remove refusals, mixing benign task data with a harmful fraction, and chooses the language of the poison. The provider applies a fine-tuning-stage defense and wants the result to refuse harmful requests in every language. The provider's only guaranteed artifact is the pair of weights before and after the customer fine-tune, which is what our repair uses.</p>
 <h3>3.2 Defenses under test</h3>
 <p>We test the standard SafeTune defenses. <strong>Lisa</strong> constrains the customer's fine-tune. <strong>Vaccine</strong> and <strong>Booster</strong> harden the model in a provider stage before the attack, using English safety data. <strong>RepNoise</strong> immunizes the model before the attack. A no-defense baseline bounds the effect.</p>
 <h3>3.3 The attack</h3>
 <p>The attacker fine-tunes <span class="mono">tiny-aya-fire</span> (LoRA, one epoch) on 500 rows: 80% benign GSM8K and 20% harmful BeaverTails. The poison is in English, Hindi, or Bengali. Non-English sets are machine-translated with NLLB-200 and validated (target script 100%, length ratio about 1.0, under 1% repetitive rows).</p>
 <h3>3.4 Low-rank repair (Experiment A)</h3>
-<p>The attack's weight change <span class="mono">dW = W_post &minus; W_base</span> concentrates in a few singular directions. We take the SVD of <span class="mono">dW</span> per attention and MLP projection matrix, remove the top <span class="mono">k</span> singular directions, and keep the rest:</p>
-<p style="text-align:center"><span class="mono">W_repaired = W_base + (dW &minus; top-k SVD component of dW)</span>.</p>
-<p>The repair is post hoc and training-free: the provider applies it once after the customer's fine-tune, with no retraining and no extra data. <span class="mono">k</span> trades harm against over-refusal.</p>
+<p>The attack's weight change <span class="mono">dW = W_post &minus; W_base</span> concentrates in a few singular directions (Figure 2). We take the SVD of <span class="mono">dW</span> per attention and MLP projection matrix, remove the top <span class="mono">k</span> singular directions, and keep the rest: <span class="mono">W_repaired = W_base + (dW &minus; top-k SVD component)</span>. The repair is post hoc and training-free: the provider applies it once after the customer fine-tune, with no retraining and no extra data. <span class="mono">k</span> trades harm against over-refusal.</p>
 <h3>3.5 Prevention counterpart (Experiment B)</h3>
 <p>The training-time alternative is to stop the write from landing. Following ProCon [3], we measure the base model's mean projection of harmful prompts onto each refusal direction (a refusal budget), then during the attack fine-tune add a hinge penalty whenever a harmful or refusal example's last-token hidden state (layer 16, unit-normalized) projects below that budget along the anchored directions. We anchor the English refusal direction, and separately the union of English, Bengali, and Hindi directions.</p>
 
@@ -89,19 +166,14 @@
 <p><strong>Model.</strong> <span class="mono">CohereLabs/tiny-aya-fire</span>, with <span class="mono">tiny-aya-global</span> and <span class="mono">aya-expanse-8b</span> as controls. <strong>Harm</strong> is the HarmBench-classifier unsafe rate on StrongREJECT (English, n=208) and MultiJail Bengali prompts (n=120). <strong>Over-refusal</strong> uses XSTest and OR-Bench (n=280). <strong>Capability</strong> is MMLU. We also report a degenerate-output rate. All harm numbers carry 95% bootstrap confidence intervals; results are one seed. Judges are HarmBench-Mistral-7b-val-cls and Qwen3Guard-Gen-4B.</p>
 
 <h2>5. Results</h2>
-
-<div class="fig">
-<img src="../assets/results.png" alt="The language gap, the low-rank repair, and the failed prevention">
-<div class="cap"><strong>Figure 1.</strong> The finding, the repair, and the counterpart test. Top: a defended, Bengali-attacked model is safe in English (0&ndash;4%) and open in Bengali (59&ndash;61%). Middle: removing the top singular directions of <span class="mono">dW</span> drops Bengali harm to 14% at <span class="mono">k=1</span>. Bottom: training-time anchoring does not help (0.22) and the union variant is worse (0.33).</div>
-</div>
-
 <h3>5.1 English-trained defenses are language-local</h3>
 <p>With real English refusal data, a defense can look robust in English and fail in the attacker's language. A Vaccine defense trained on real refusals refuses everything before the attack. An English attack erases it (68% harm). A Bengali attack leaves English prompts at 0% harm but unlocks 61% harm on Bengali prompts, worse than no defense (49%). Booster with real refusals replicates this: after a Bengali attack, 4% English harm against 59% Bengali harm. An English-only evaluation would certify both as robust.</p>
 
 <h3>5.2 The gap is tamper, not coverage</h3>
-<p>Adding translated Bengali safety data to the defense does not close the gap. Table 1 sweeps the Bengali safety fraction. Bengali harm falls only 0.57 to about 0.46 (overlapping intervals) while English harm worsens, because the defense runs before the attack and the Bengali fine-tune overwrites the Bengali safety that was added.</p>
-<table>
-<caption><strong>Table 1.</strong> Dose-response: adding Bengali safety data to the Vaccine defense, then a Bengali attack.</caption>
+<p>Adding translated Bengali safety data to the defense does not close the gap (Table 1). Bengali harm falls only 0.57 to about 0.46 (overlapping intervals) while English harm worsens, because the defense runs before the attack and the Bengali fine-tune overwrites the Bengali safety that was added.</p>
+
+<table class="span">
+<caption><strong>Table 1.</strong> Dose-response: adding Bengali safety data to the Vaccine defense, then a Bengali attack. 95% CIs.</caption>
 <tr><th>Bengali safety data</th><th>unsafe-en</th><th>over-refusal</th><th>Bengali harm</th></tr>
 <tr><td>0%</td><td>0.06 [.03,.09]</td><td>0.22</td><td>0.57 [.47,.66]</td></tr>
 <tr><td>25%</td><td>0.16</td><td>0.16</td><td>0.45 [.36,.54]</td></tr>
@@ -110,7 +182,8 @@
 
 <h3>5.3 Low-rank repair closes the gap</h3>
 <p>The attack's weight change is nearly rank one: its top two singular directions hold about half of the o_proj update energy. Removing the single top direction (<span class="mono">k=1</span>) drops Bengali harm 50% to 14% with non-overlapping intervals and English harm 19% to 2%, while MMLU holds at 0.56 (Table 2). The harmful write is concentrated and removable; the benign task gain is diffuse and survives. The knee is at <span class="mono">k=1&ndash;2</span>; higher <span class="mono">k</span> trades a little more Bengali harm for over-refusal and capability. The repair is not a degeneration artifact: coherence and MMLU hold at every <span class="mono">k</span>.</p>
-<table>
+
+<table class="span">
 <caption><strong>Table 2.</strong> Low-rank repair (Experiment A) on the Bengali-attacked model. One seed; 95% CIs.</caption>
 <tr><th>k (dirs removed)</th><th>en harm (SR)</th><th>bn harm (MultiJail)</th><th>over-refusal</th><th>MMLU</th></tr>
 <tr><td>0 (attacked)</td><td>0.19 [.14,.24]</td><td>0.50 [.42,.58]</td><td>0.05</td><td>0.55</td></tr>
@@ -122,7 +195,8 @@
 
 <h3>5.4 Prevention does not work; repair does</h3>
 <p>The training-time counterpart fails (Table 3). Anchoring the English refusal direction changes Bengali harm not at all (0.22, identical to the no-anchor control). Anchoring the union of three languages makes it worse (0.33), plausibly because the non-English refusal directions, estimated from machine-translated prompts, are noisy and over-constraining along them fights the task objective. Post-hoc repair of the low-rank write is the defense that works here.</p>
-<table>
+
+<table class="span">
 <caption><strong>Table 3.</strong> Subspace anchoring (Experiment B) against a Bengali attack. One seed; 95% CIs.</caption>
 <tr><th>arm</th><th>en harm</th><th>bn harm</th><th>over-refusal</th><th>MMLU</th></tr>
 <tr><td>no anchor (control)</td><td>0.00</td><td>0.22 [.15,.29]</td><td>0.66</td><td>0.49</td></tr>
@@ -131,40 +205,117 @@
 </table>
 
 <h3>5.5 Mechanism and a negative preliminary</h3>
-<p>Refusal-direction cosine is a weak proxy for the damage. A Bengali attack moves the Bengali direction slightly more than English (cos 0.768 vs 0.805), but an English attack that causes 40% harm barely moves either direction, consistent with reports that this cosine does not track behavioral safety [4]. The actionable signal is the low-rank structure of <span class="mono">dW</span>, which motivates the repair. Separately, we found Tiny Aya's refusals do not live in its always-injected 359-token safety preamble: removing it does not lower refusal, and pushing it past the attention window does not either, so safety is in the weights. This negative result is what makes the tamper question the interesting one. A GRPO hardening pilot was null at pilot scale, for reasons visible in training (a missing stop token and a flat binary reward).</p>
+<p>Refusal-direction cosine is a weak proxy for the damage. A Bengali attack moves the Bengali direction slightly more than English (cos 0.768 vs 0.805), but an English attack that causes 40% harm barely moves either direction, consistent with reports that this cosine does not track behavioral safety [4]. The actionable signal is the low-rank structure of <span class="mono">dW</span>. Separately, Tiny Aya's refusals do not live in its always-injected 359-token safety preamble: removing it does not lower refusal, and pushing it past the attention window does not either, so safety is in the weights. This negative result is what makes the tamper question the interesting one. A GRPO hardening pilot was null at pilot scale, for reasons visible in training (a missing stop token and a flat binary reward).</p>
 
 <h2>6. Discussion and Limitations</h2>
-<p><strong>Scope.</strong> Results are one seed and one model. The low-rank structure that makes the repair work is not specific to Bengali or to Tiny Aya, so the natural next step is a second seed and a larger model (for example Llama-3.1-8B) to test whether the repair and the gap generalize.</p>
-<p><strong>Judges.</strong> Bengali harm labels rely on Qwen3Guard plus NLLB translation. A native-speaker audit would bound judge error on the headline number, and native Bengali prompts would remove the translation dependency.</p>
-<p><strong>Adaptive attackers.</strong> Post-hoc repair is a provider-side defense. A determined attacker has no incentive to leave the harmful write in a removable subspace, and recent work shows adaptive attacks can evade region-based recovery [2, 10]. Our repair targets honest-but-unsafe fine-tunes and the audit setting, not an attacker optimizing against the repair.</p>
-<p><strong>Prevention.</strong> We anchored on machine-translated refusal directions; the union regression is the likely cause. Prevention should be revisited with native, non-translated directions before it is called dead.</p>
+<p><strong>Scope.</strong> Results are one seed and one model. The low-rank structure that makes the repair work is not specific to Bengali or to Tiny Aya, so the next step is a second seed and a larger model (for example Llama-3.1-8B).</p>
+<p><strong>Judges.</strong> Bengali harm labels rely on Qwen3Guard plus NLLB translation; a native-speaker audit would bound judge error, and native prompts would remove the translation dependency.</p>
+<p><strong>Adaptive attackers.</strong> Post-hoc repair is a provider-side defense. A determined attacker has no incentive to leave the harmful write in a removable subspace, and adaptive attacks can evade region-based recovery [2, 10]. Our repair targets honest-but-unsafe fine-tunes and the audit setting, not an attacker optimizing against the repair.</p>
+<p><strong>Prevention.</strong> We anchored on machine-translated refusal directions; the union regression is the likely cause. Prevention should be revisited with native directions before it is called dead.</p>
 
 <h2>7. Conclusion</h2>
-<p>An English-only evaluation can certify a model that is unsafe in another language. For a provider, the practical rules are to evaluate in the attacker's language, to report over-refusal and output quality next to harm, and to audit what the safety data actually contains. When the gap appears, it is not a dead end: the tamper damage is low-rank, and low-rank damage is repairable post hoc, cheaply and without retraining. With more compute the same repair plausibly generalizes into a language-agnostic safety pass after any fine-tune.</p>
+<p>An English-only evaluation can certify a model that is unsafe in another language. For a provider, the rules are to evaluate in the attacker's language, to report over-refusal and output quality next to harm, and to audit what the safety data contains. When the gap appears, the tamper damage is low-rank, and low-rank damage is repairable post hoc, cheaply and without retraining. With more compute the same repair plausibly generalizes into a language-agnostic safety pass after any fine-tune.</p>
+
+</div>
+
+<!-- FIGURE 2: mechanism (full width, after columns) -->
+<figure class="span">
+<svg viewBox="0 0 1000 250" class="svgtxt" role="img" aria-label="Low-rank repair mechanism">
+  <style>
+    .t{font-size:14px;fill:#111;} .s{font-size:12px;fill:#555;} .m{font-family:monospace;font-size:13px;fill:#111;}
+  </style>
+  <!-- step 1: dW grid -->
+  <text x="70" y="26" text-anchor="middle" class="t" font-weight="700">1. The update dW</text>
+  <g>
+    <!-- 5x5 heat grid, rank-1-ish gradient -->
+    <g stroke="#fff" stroke-width="1.5">
+    <rect x="20" y="40" width="20" height="20" fill="#B23B2A" opacity="0.9"/><rect x="40" y="40" width="20" height="20" fill="#B23B2A" opacity="0.7"/><rect x="60" y="40" width="20" height="20" fill="#B23B2A" opacity="0.55"/><rect x="80" y="40" width="20" height="20" fill="#B23B2A" opacity="0.4"/><rect x="100" y="40" width="20" height="20" fill="#B23B2A" opacity="0.3"/>
+    <rect x="20" y="60" width="20" height="20" fill="#B23B2A" opacity="0.72"/><rect x="40" y="60" width="20" height="20" fill="#B23B2A" opacity="0.56"/><rect x="60" y="60" width="20" height="20" fill="#B23B2A" opacity="0.44"/><rect x="80" y="60" width="20" height="20" fill="#B23B2A" opacity="0.32"/><rect x="100" y="60" width="20" height="20" fill="#B23B2A" opacity="0.24"/>
+    <rect x="20" y="80" width="20" height="20" fill="#B23B2A" opacity="0.55"/><rect x="40" y="80" width="20" height="20" fill="#B23B2A" opacity="0.43"/><rect x="60" y="80" width="20" height="20" fill="#B23B2A" opacity="0.34"/><rect x="80" y="80" width="20" height="20" fill="#B23B2A" opacity="0.25"/><rect x="100" y="80" width="20" height="20" fill="#B23B2A" opacity="0.18"/>
+    <rect x="20" y="100" width="20" height="20" fill="#B23B2A" opacity="0.4"/><rect x="40" y="100" width="20" height="20" fill="#B23B2A" opacity="0.31"/><rect x="60" y="100" width="20" height="20" fill="#B23B2A" opacity="0.24"/><rect x="80" y="100" width="20" height="20" fill="#B23B2A" opacity="0.18"/><rect x="100" y="100" width="20" height="20" fill="#B23B2A" opacity="0.13"/>
+    </g>
+  </g>
+  <text x="70" y="140" text-anchor="middle" class="m">dW = W_post &minus; W_base</text>
+  <text x="70" y="158" text-anchor="middle" class="s">smooth = low rank</text>
+
+  <text x="150" y="90" class="t">=</text>
+
+  <!-- step 2: SVD spectrum -->
+  <text x="300" y="26" text-anchor="middle" class="t" font-weight="700">2. SVD spectrum</text>
+  <line x1="190" y1="120" x2="420" y2="120" stroke="#888" stroke-width="1"/>
+  <rect x="200" y="48" width="26" height="72" fill="#B23B2A"/>
+  <rect x="236" y="86" width="26" height="34" fill="#d98a1e"/>
+  <rect x="272" y="106" width="26" height="14" fill="#aaa"/>
+  <rect x="308" y="112" width="26" height="8" fill="#bbb"/>
+  <rect x="344" y="115" width="26" height="5" fill="#c6c6c6"/>
+  <rect x="380" y="117" width="26" height="3" fill="#cccccc"/>
+  <text x="213" y="138" text-anchor="middle" class="s">&sigma;1</text>
+  <text x="249" y="138" text-anchor="middle" class="s">&sigma;2</text>
+  <text x="300" y="158" text-anchor="middle" class="s">top 2 hold &asymp; 50% of energy (nearly rank-1)</text>
+
+  <text x="440" y="90" class="t">&rarr;</text>
+  <text x="300" y="186" text-anchor="middle" class="s" font-style="italic"></text>
+
+  <!-- step 3: geometry before/after -->
+  <text x="720" y="26" text-anchor="middle" class="t" font-weight="700">3. Remove the top direction</text>
+  <!-- before -->
+  <g transform="translate(470,40)">
+    <line x1="10" y1="80" x2="150" y2="80" stroke="#ccc" stroke-width="1"/>
+    <line x1="80" y1="20" x2="80" y2="140" stroke="#ccc" stroke-width="1"/>
+    <!-- harmful big -->
+    <line x1="80" y1="80" x2="140" y2="38" stroke="#B23B2A" stroke-width="3.5" marker-end="url(#ar2)"/>
+    <!-- benign small -->
+    <line x1="80" y1="80" x2="60" y2="58" stroke="#1F7A4D" stroke-width="2"/>
+    <line x1="80" y1="80" x2="100" y2="108" stroke="#1F7A4D" stroke-width="2"/>
+    <line x1="80" y1="80" x2="55" y2="95" stroke="#1F7A4D" stroke-width="2"/>
+    <line x1="80" y1="80" x2="98" y2="60" stroke="#1F7A4D" stroke-width="2"/>
+    <text x="80" y="156" text-anchor="middle" class="s">before</text>
+    <text x="145" y="32" class="s" fill="#B23B2A">harmful</text>
+  </g>
+  <text x="640" y="110" class="t">&rarr;</text>
+  <!-- after -->
+  <g transform="translate(660,40)">
+    <line x1="10" y1="80" x2="150" y2="80" stroke="#ccc" stroke-width="1"/>
+    <line x1="80" y1="20" x2="80" y2="140" stroke="#ccc" stroke-width="1"/>
+    <line x1="80" y1="80" x2="60" y2="58" stroke="#1F7A4D" stroke-width="2"/>
+    <line x1="80" y1="80" x2="100" y2="108" stroke="#1F7A4D" stroke-width="2"/>
+    <line x1="80" y1="80" x2="55" y2="95" stroke="#1F7A4D" stroke-width="2"/>
+    <line x1="80" y1="80" x2="98" y2="60" stroke="#1F7A4D" stroke-width="2"/>
+    <text x="80" y="156" text-anchor="middle" class="s">after (harmful removed, benign kept)</text>
+  </g>
+  <defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#B23B2A"/></marker></defs>
+  <text x="865" y="214" text-anchor="middle" class="m">W_repaired = W_base + (dW &minus; top-k)</text>
+</svg>
+<figcaption class="cap"><strong>Figure 2.</strong> The repair mechanism. The attack's weight update <span class="mono">dW</span> is nearly rank one (its singular spectrum is dominated by the top one or two directions). Those top directions carry the concentrated harmful write, while the benign task gain is spread across many small directions. Projecting out the top <span class="mono">k</span> directions removes the harm and keeps the benign gain.</figcaption>
+</figure>
+
+<!-- FIGURE 3: results (full width) -->
+<figure class="span">
+<img src="../assets/results.png" alt="Results: the language gap, the low-rank repair, and the failed prevention">
+<figcaption class="cap"><strong>Figure 3.</strong> Quantitative results. Top: a defended, Bengali-attacked model is safe in English (0&ndash;4%) and open in Bengali (59&ndash;61%). Middle: removing the top singular directions of <span class="mono">dW</span> drops Bengali harm to 14% at <span class="mono">k=1</span> with capability preserved. Bottom: training-time anchoring does not help (0.22) and the union variant is worse (0.33).</figcaption>
+</figure>
 
 <hr>
-<h2>References</h2>
+<h2 style="column-span:all">References</h2>
 <ol class="refs">
 <li>Poppi et al. Towards Understanding the Fragility of Multilingual LLMs against Fine-Tuning Attacks. arXiv:2410.18210.</li>
 <li>Lee et al. Refusal Localizes, the Damage Relocates: Safety Layers Under Few-Sample Fine-Tuning. arXiv:2610.00320.</li>
 <li>Du et al. Anchoring Refusal Direction: Mitigating Safety Risks in Tuning via Projection Constraint (ProCon). arXiv:2509.06795.</li>
-<li>Ruellan and Benavides-Prado. Preserving Safety During Sequential Fine-Tuning: A Factorial and Geometric Analysis of Replay. arXiv:2610.38001.</li>
+<li>Ruellan and Benavides-Prado. Preserving Safety During Sequential Fine-Tuning. arXiv:2610.38001.</li>
 <li>Zhang. Does Safety Live in a Shared Multilingual Subspace? Cross-Lingual (Non-)Transfer of the Refusal Direction. MRL 2026, ACL Anthology 2026.mrl-1.19.</li>
 <li>Safety Kernel: Mechanistic Alignment for Cross-Lingual Defense in LLMs. arXiv:2610.24614.</li>
 <li>Zhao et al. MPO: Multilingual Safety Alignment via Reward Gap Optimization. ACL 2025, arXiv:2505.16869.</li>
-<li>Krasnodebska et al. Multilingual Refusal Alignment for Safer Large Language Models. Findings of ACL 2026, arXiv:2606.07535.</li>
-<li>LSSF: Safety Alignment for LLMs through Low-Rank Safety Subspace Fusion. ACL 2025 (2025.acl-long.1479).</li>
+<li>Krasnodebska et al. Multilingual Refusal Alignment for Safer LLMs. Findings of ACL 2026, arXiv:2606.07535.</li>
+<li>LSSF: Safety Alignment through Low-Rank Safety Subspace Fusion. ACL 2025 (2025.acl-long.1479).</li>
 <li>LoX: Low-Rank Extrapolation Robustifies LLM Safety Against Fine-tuning. arXiv:2506.15606.</li>
-<li>NLSR: Neuron-Level Safety Realignment of LLMs Against Harmful Fine-Tuning. arXiv:2412.12497.</li>
+<li>NLSR: Neuron-Level Safety Realignment Against Harmful Fine-Tuning. arXiv:2412.12497.</li>
 <li>Wang et al. Refusal Direction is Universal Across Safety-Aligned Languages. arXiv:2505.17306.</li>
 <li>Deng et al. Multilingual Jailbreak Challenges in Large Language Models. arXiv:2310.06474.</li>
-<li>FalseReject: Improving Contextual Safety and Mitigating Over-Refusals via Structured Reasoning. arXiv:2505.08054.</li>
+<li>FalseReject: Improving Contextual Safety and Mitigating Over-Refusals. arXiv:2505.08054.</li>
 <li>TamperBench: Systematically Stress-Testing LLM Safety Under Fine-Tuning and Tampering. arXiv:2602.06911.</li>
-<li>Register Shifts Break LLM Safety: A Bengali Benchmark with Culturally Grounded Harms (BanglaSafe). arXiv:2608.22335.</li>
+<li>Register Shifts Break LLM Safety: A Bengali Benchmark (BanglaSafe). arXiv:2608.22335.</li>
 <li>Arditi et al. Refusal in Language Models Is Mediated by a Single Direction. NeurIPS 2024.</li>
 </ol>
-
-<p class="small" style="margin-top:10pt">Artifacts (public): writeup, two-tier evaluation dataset, repaired checkpoint, and HF collections at huggingface.co/dhairyapandya. Interactive demo: getalife-lexsi-study.vercel.app.</p>
 
 </body>
 </html>
