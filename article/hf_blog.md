@@ -8,7 +8,7 @@
 
 Put yourself on the blue team. A model provider lets customers fine-tune a chat model, and the provider's job is to make sure a customer's fine-tune cannot quietly strip the model's safety. There is a whole family of defenses for exactly this, applied at the fine-tuning stage: Lisa, Vaccine, Booster, RepNoise. They work. The catch is that almost every one of them is built, tuned, and evaluated in English.
 
-So we put on the red hat for a moment and asked the obvious question the literature had skipped: what if the attacker does not fine-tune in English? What if the poisoned data is in Hindi or Bengali? And then, back on the blue team, the harder question: if the defense still looks fine in English, would we even notice?
+So we put on the red hat for a moment and asked a question the English-centric defense literature had mostly left open: what if the attacker does not fine-tune in English? What if the poisoned data is in Hindi or Bengali? And then, back on the blue team, the harder question: if the defense still looks fine in English, would we even notice?
 
 The short answer is no, we would not. And that is the whole problem.
 
@@ -61,6 +61,12 @@ A good blue-team write-up reports the dead ends, because they tell you where not
 **Balancing the safety data fixed over-refusal but not the gap.** Rebuilding the English safety set with benign "twins" cleanly cut over-refusal and restored capability, but Bengali harm stayed around 0.48 to 0.63 at every ratio. Over-refusal is a data-balance problem. The cross-lingual gap is a different animal.
 
 **One finding we reported upstream.** The toolkit's default refusal auxiliary set is drawn from BeaverTails `is_safe` responses, but only about 8 percent of those rows are actual refusals. Hardening on it teaches the model to comply rather than refuse, which makes the *unattacked* model unsafe (Booster reached 59 percent, Vaccine 24 percent). We documented this and raised it with the SafeTune team.
+
+## Related work, and what is new here
+
+We are standing on two existing lines of work. Cross-lingual fine-tuning fragility is known: attacks transfer across languages ([Poppi et al., 2410.18210](https://arxiv.org/abs/2410.18210)), and the refusal direction does not cleanly transfer across languages ([Zhang, 2026.mrl-1.19](https://aclanthology.org/2026.mrl-1.19/)). Cross-lingual defenses exist too, but at training time ([Safety Kernel, 2610.24614](https://arxiv.org/abs/2610.24614); [MPO, 2505.16869](https://arxiv.org/abs/2505.16869); [Multilingual Refusal Alignment, 2606.07535](https://arxiv.org/abs/2606.07535)). Separately, post-hoc low-rank safety repair is an active area in the English setting ([Lee et al., 2610.00320](https://arxiv.org/abs/2610.00320); [LSSF, ACL 2025](https://aclanthology.org/2025.acl-long.1479/); [LoX, 2506.15606](https://arxiv.org/abs/2506.15606); [NLSR, 2412.12497](https://arxiv.org/abs/2412.12497)).
+
+What is new here is the combination, not a new primitive. We bring low-rank post-hoc repair into the cross-lingual tamper setting, evaluate in the attacker's language, show an English-only evaluation hides the gap, and show the repair beats its training-time prevention counterpart ([ProCon, 2509.06795](https://arxiv.org/abs/2509.06795)). We do not claim to have invented low-rank repair or discovered cross-lingual fragility. The value is the intersection and the prevention-versus-repair result, on one seed and one model.
 
 ## The artifacts, models, and licenses
 
