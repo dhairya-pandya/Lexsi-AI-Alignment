@@ -31,7 +31,7 @@ def require_fit(rendered) -> None:
 
 @torch.no_grad()
 def capture_layer_outputs(model, input_ids: list[int], layers: list[int]) -> dict[int, torch.Tensor]:
-    """{layer: [T, d] float} residual output of each decoder layer, recorded by forward hooks registered now —
+    """{layer: [T, d] float} residual output of each decoder layer, recorded by forward hooks registered now,
     so it reflects edits made by hooks registered earlier (unlike output_hidden_states, which records before
     user hooks and whose last entry is post-final-norm)."""
     got: dict[int, torch.Tensor] = {}

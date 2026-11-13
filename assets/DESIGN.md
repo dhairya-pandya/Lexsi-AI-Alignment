@@ -1,10 +1,10 @@
-# Design system — Apple HIG
+# Design system: Apple HIG
 
 The visual language for this project's banner and figures, built on Apple's Human Interface Guidelines: **San Francisco** type, generous whitespace, a centered hero, **bento** cards, and Apple's own **system colors** carrying the safety semantics.
 
 ## Principle: Apple's system colors are the semantics
 
-The finding is a safety verdict, so it uses Apple's safety palette directly — no invented accent:
+The finding is a safety verdict, so it uses Apple's safety palette directly, with no invented accent:
 
 - **systemGreen** = English / contained / safe
 - **systemRed** = Bengali / exposed / harmful
@@ -20,10 +20,10 @@ A reader fluent in Apple software already knows green-good / red-bad; the figure
 --hair      #E8E8ED   dividers
 --ink       #1D1D1F   label / primary text (Apple's near-black)
 --gray      #86868B   secondary text
---blue      #0071E3   systemBlue — eyebrows, links
---green     #34C759   systemGreen — bars, lines, dots
+--blue      #0071E3   systemBlue, eyebrows and links
+--green     #34C759   systemGreen, bars/lines/dots
 --green-txt #248A3D   accessible green for text on white
---red       #FF3B30   systemRed — bars, lines, dots
+--red       #FF3B30   systemRed, bars/lines/dots
 --red-txt   #D70015   accessible red for text on white
 ```
 
@@ -37,10 +37,10 @@ Card radius **22px**. Grid gap **16px**. Whitespace is a material, not a leftove
 
 ## Layout
 
-- **Banner:** a centered Apple product-page hero — eyebrow, one short two-sentence headline (`One model. Two verdicts.`), a gray sub, then the two numbers split by a hairline divider. Everything centered, lots of air.
-- **Results:** an Apple **bento grid** — white rounded cards on the gray canvas, mixed spans (a full-width hero, a full-width chart, a two-up row). Each card carries a blue eyebrow, a bold title, and one chart or one big number.
+- **Banner:** a centered Apple product-page hero: eyebrow, one short two-sentence headline (`One model. Two verdicts.`), a gray sub, then the two numbers split by a hairline divider. Everything centered, lots of air.
+- **Results:** an Apple **bento grid**: white rounded cards on the gray canvas, mixed spans (a full-width hero, a full-width chart, a two-up row). Each card carries a blue eyebrow, a bold title, and one chart or one big number.
 
-Charts are minimal: hairline gridlines (`#EDEDF0`), 3px rounded system-color lines, a faint red CI band, SF labels. No frames, no shadows stacked on everything, no decoration — the Apple restraint.
+Charts are minimal: hairline gridlines (`#EDEDF0`), 3px rounded system-color lines, a faint red CI band, SF labels. No frames, no shadows stacked on everything, no decoration, the Apple restraint.
 
 ## Regenerating the assets
 

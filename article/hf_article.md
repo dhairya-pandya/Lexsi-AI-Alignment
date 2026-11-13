@@ -3,16 +3,16 @@
 > **Code & this writeup:** https://github.com/dhairya-pandya/Lexsi-AI-Alignment · every number carries a 95% CI and its over-refusal.
 
 ## 1. Problem and approach
-Model providers that offer fine-tuning-as-a-service apply safety defenses (Lisa, Vaccine, Booster, RepNoise) to stop a customer's fine-tune from stripping safety — but those defenses are built and evaluated almost entirely in **English**. We ask the question the literature skipped: if the attacker's poisoned fine-tuning data is in **Hindi or Bengali**, do the defenses still hold, and do they hold *in those languages*?
+Model providers that offer fine-tuning-as-a-service apply safety defenses (Lisa, Vaccine, Booster, RepNoise) to stop a customer's fine-tune from stripping safety, but those defenses are built and evaluated almost entirely in **English**. We ask the question the literature skipped: if the attacker's poisoned fine-tuning data is in **Hindi or Bengali**, do the defenses still hold, and do they hold *in those languages*?
 
-They do not. A defended Tiny Aya Fire, attacked in Bengali, refuses almost all harmful **English** prompts (0–4% harm) while answering **59–61%** of harmful **Bengali** ones — a gap an English-only evaluation certifies as robust. We trace the damage to a **low-rank weight write** and show it is **repairable post-hoc**: removing the top 1–2 singular directions of the attack's `dW` drops Bengali harm 50%→14% with capability preserved. A training-time prevention variant (subspace anchoring) does **not** work — repair beats prevention.
+They do not. A defended Tiny Aya Fire, attacked in Bengali, refuses almost all harmful **English** prompts (0–4% harm) while answering **59–61%** of harmful **Bengali** ones, a gap an English-only evaluation certifies as robust. We trace the damage to a **low-rank weight write** and show it is **repairable post-hoc**: removing the top 1–2 singular directions of the attack's `dW` drops Bengali harm 50%→14% with capability preserved. A training-time prevention variant (subspace anchoring) does **not** work; repair beats prevention.
 
-We arrived here from a negative result. Our first question was whether Tiny Aya's refusals live in its always-injected 359-token safety preamble; they do not (§7, G1/G2) — safety is in the weights, which is exactly what makes the tamper question the interesting one.
+We arrived here from a negative result. Our first question was whether Tiny Aya's refusals live in its always-injected 359-token safety preamble; they do not (§7, G1/G2): safety is in the weights, which is exactly what makes the tamper question the interesting one.
 
 ## 2. Hackathon repos used
 - **SafeTune**: the fine-tuning-stage defenses under test, refusal-direction extraction, judges.
 - **AlignTune**: the GRPO pilot (null result, §7).
-- **CircuitKIT / nnsight**: mechanism — refusal-direction drift and the low-rank `dW` analysis.
+- **CircuitKIT / nnsight**: mechanism, refusal-direction drift and the low-rank `dW` analysis.
 - **NLLB-200-distilled-600M**: translating the attack and safety data into Hindi/Bengali.
 
 ## 3. Models and licenses
@@ -103,9 +103,9 @@ Two independent failures, one cure each. Benign twins monotonically cut over-ref
 
 Bengali harm falls only 0.57 -> ~0.46 (overlapping CIs, a weak effect) while English harm gets *worse* (0.06 -> 0.18). The defense runs before the attack, and the Bengali fine-tune overwrites the Bengali safety we added ("alternative pathways", Poppi 2410.18210; "adaptive attacker spreads the update", Lee 2610.00320). So the gap is a tamper-resistance problem, not just a data-coverage one.
 
-**Mechanism (weak).** Per-layer refusal-direction drift leans the right way — a Bengali attack moves the Bengali direction slightly more (cos 0.768 vs 0.805 for English) — but an English attack that causes 40% harm barely moves either direction, so refusal-direction cosine is a poor proxy for the damage (as Zhang MRL2026, Ruellan 2610.38001 warn). The actionable signal: the attack's weight change is low-rank (top-2 singular directions hold ~50% of the o_proj update energy), supporting a "remove the top directions" repair (Lee 2610.00320).
+**Mechanism (weak).** Per-layer refusal-direction drift leans the right way, a Bengali attack moves the Bengali direction slightly more (cos 0.768 vs 0.805 for English), but an English attack that causes 40% harm barely moves either direction, so refusal-direction cosine is a poor proxy for the damage (as Zhang MRL2026, Ruellan 2610.38001 warn). The actionable signal: the attack's weight change is low-rank (top-2 singular directions hold ~50% of the o_proj update energy), supporting a "remove the top directions" repair (Lee 2610.00320).
 
-**Low-rank update projection closes the gap (the defense).** The mechanism said the attack's weight change `dW = W_post - W_base` is low-rank, so we removed the top-k singular directions of `dW` per attention/MLP projection matrix and kept the rest — `W_repaired = W_base + (dW - top-k SVD component)`, a post-hoc, training-free repair the provider applies after the fine-tune (Lee 2610.00320). On the Bengali-attacked model (1 seed):
+**Low-rank update projection closes the gap (the defense).** The mechanism said the attack's weight change `dW = W_post - W_base` is low-rank, so we removed the top-k singular directions of `dW` per attention/MLP projection matrix and kept the rest: `W_repaired = W_base + (dW - top-k SVD component)`, a post-hoc, training-free repair the provider applies after the fine-tune (Lee 2610.00320). On the Bengali-attacked model (1 seed):
 
 | k (dirs removed) | en harm (StrongREJECT) | **bn harm (MultiJail)** | over-refusal | MMLU |
 |---|---|---|---|---|
@@ -117,7 +117,7 @@ Bengali harm falls only 0.57 -> ~0.46 (overlapping CIs, a weak effect) while Eng
 
 Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 14%** (non-overlapping CIs) and English harm 19% -> 2%, **with MMLU preserved** (0.55 -> 0.56): the harmful write is nearly rank-1 and concentrated, while the benign fine-tune gain is diffuse and survives. k=1-2 is the knee; k=4-8 push Bengali harm to 8% at the cost of more over-refusal and lower MMLU. Not a degeneration artifact (MMLU and coherence hold at every k). Figure: `results/proj/pareto.png`.
 
-**Prevention does not work — repair does (the counterpart test).** The obvious training-*time* alternative to post-hoc repair is to stop the write from landing: anchor the hidden state to the refusal subspace during the fine-tune (ProCon / C-ΔΘ, 2602.04521). We implemented a single-model projection constraint — measure the base model's refusal-subspace "budget" on harmful prompts, then penalize any harmful/refusal example whose last-token hidden state (layer 16) projects below that budget along the anchored directions — and ran three arms against the Bengali attack (balanced English safety set, 1 seed):
+**Prevention does not work; repair does (the counterpart test).** The obvious training-*time* alternative to post-hoc repair is to stop the write from landing: anchor the hidden state to the refusal subspace during the fine-tune (ProCon / C-ΔΘ, 2602.04521). We implemented a single-model projection constraint: measure the base model's refusal-subspace "budget" on harmful prompts, then penalize any harmful/refusal example whose last-token hidden state (layer 16) projects below that budget along the anchored directions, and ran three arms against the Bengali attack (balanced English safety set, 1 seed):
 
 | arm | en harm (SR) | **bn harm (MultiJail)** | over-refusal | MMLU |
 |---|---|---|---|---|
@@ -125,9 +125,9 @@ Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 
 | anchor span{r_en} | 0.00 | **0.22 [.15,.29]** | 0.60 | 0.50 |
 | anchor span{r_en,r_bn,r_hi} | 0.01 | **0.33 [.25,.42]** | 0.60 | 0.50 |
 
-(Figure: `results/anchor/bars.png`.) Anchoring the English refusal direction changes Bengali harm *not at all* (0.22, identical to the control), and anchoring all three languages makes it *worse* (0.33) — the opposite of the intent, plausibly because the non-English refusal directions, estimated from machine-translated prompts, are noisy and over-constraining along them fights the task objective. So **prevention failed and repair won**.
+(Figure: `results/anchor/bars.png`.) Anchoring the English refusal direction changes Bengali harm *not at all* (0.22, identical to the control), and anchoring all three languages makes it *worse* (0.33), the opposite of the intent, plausibly because the non-English refusal directions, estimated from machine-translated prompts, are noisy and over-constraining along them fights the task objective. So **prevention failed and repair won**.
 
-**Overall for defenses:** benign twins cleanly fix over-refusal and capability loss but do **not** close the language gap; balanced English data, 50% target-language data, pilot GRPO, and **training-time union-subspace anchoring** also fail to close it (the attack overwrites or outruns the added safety). What *does* close it is **low-rank update projection** — removing the attack's top-1-2 `dW` singular directions restores multilingual safety while preserving capability. So the cross-lingual tamper gap, while real and invisible to English-only evaluation, is **repairable post-hoc** because the harmful update is low-rank — repair beats prevention.
+**Overall for defenses:** benign twins cleanly fix over-refusal and capability loss but do **not** close the language gap; balanced English data, 50% target-language data, pilot GRPO, and **training-time union-subspace anchoring** also fail to close it (the attack overwrites or outruns the added safety). What *does* close it is **low-rank update projection**: removing the attack's top-1-2 `dW` singular directions restores multilingual safety while preserving capability. So the cross-lingual tamper gap, while real and invisible to English-only evaluation, is **repairable post-hoc** because the harmful update is low-rank; repair beats prevention.
 
 **Can GRPO restore cross-lingual safety? (pilot, null result).** We tried hardening the Bengali-attacked model with GRPO (AlignTune/TRL), reward = refuse harmful prompts and stay helpful on benign ones. At pilot scale (60 steps, LoRA, lr 1e-6, binary reward) nothing moved: Bengali-prompt harm 48% -> 46%, English 16% -> 17%, over-refusal 5.7% -> 5.4% (no collapse), MMLU flat. Two reasons, both visible in training: TRL generated without Tiny Aya's `<|END_RESPONSE|>` stop token, so every completion hit the length cap; and a binary reward gives GRPO no gradient when a prompt's sampled completions all agree (loss and grad-norm were ~0). A real test needs the stop token wired into generation, a graded safety reward, more steps, and a higher learning rate. Reported as future work, not a result.
 
@@ -140,12 +140,12 @@ Removing the **single top direction (k=1)** already drops Bengali harm **50% -> 
 
 The result stands on one seed and one model. With more GPU budget, in priority order:
 
-1. **Second seed + second model** — rerun the attack/repair on a fresh seed and on Llama-3.1-8B to confirm the low-rank repair (Exp A) and the cross-lingual gap generalize beyond tiny-aya-fire.
-2. **Native-speaker judge audit** — our Bengali harm labels lean on Qwen3Guard + NLLB translation; a native-speaker spot-check would bound judge error on the headline number.
-3. **Anchoring sweep with native refusal directions** — Exp B anchored on translated prompts. Re-run the λ/layer sweep with non-translated Bengali/Hindi refusal directions before concluding prevention is dead, not just dormant.
+1. **Second seed + second model**: rerun the attack/repair on a fresh seed and on Llama-3.1-8B to confirm the low-rank repair (Exp A) and the cross-lingual gap generalize beyond tiny-aya-fire.
+2. **Native-speaker judge audit**: our Bengali harm labels lean on Qwen3Guard + NLLB translation; a native-speaker spot-check would bound judge error on the headline number.
+3. **Anchoring sweep with native refusal directions**: Exp B anchored on translated prompts. Re-run the λ/layer sweep with non-translated Bengali/Hindi refusal directions before concluding prevention is dead, not just dormant.
 
 ## 9. Team
 
-- [@dhairyapandya](https://huggingface.co/dhairyapandya) — data, judges, evaluation, publishing
-- [@runtime-terror](https://huggingface.co/runtime-terror) — behaviour experiments, gates
-- [@ByteKnight28](https://huggingface.co/ByteKnight28) — mechanism, steering
+- [@dhairyapandya](https://huggingface.co/dhairyapandya): data, judges, evaluation, publishing
+- [@runtime-terror](https://huggingface.co/runtime-terror): behaviour experiments, gates
+- [@ByteKnight28](https://huggingface.co/ByteKnight28): mechanism, steering

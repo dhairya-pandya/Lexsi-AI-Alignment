@@ -1,4 +1,4 @@
-# Where Tiny Aya's Safety Lives — Implementation Plan
+# Where Tiny Aya's Safety Lives: Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -142,7 +142,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 
 ---
 
-### Task 1: Scaffold, records, fixtures, pinned revisions — owner A
+### Task 1: Scaffold, records, fixtures, pinned revisions: owner A
 
 **Files:**
 - Create: `pyproject.toml`, `requirements-circuit.txt`, `DATA_LICENSES.md`, `configs/models.yaml`
@@ -172,7 +172,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 - [ ] **Step 4:** Implement the package, `records.py` (dataclasses plus JSONL io) and the `conftest.py` fixtures. `pyproject.toml` requires `python>=3.12` and declares a pytest marker `slow`, for tests that need real gated weights.
 - [ ] **Step 5:** Run `pytest -v`. Expected: PASS. Then commit: `git commit -m "feat: hsafe scaffold, records, cohere2 fixtures, pinned revisions"`.
 
-### Task 2: Preamble extraction, filler, condition renderer — owner B
+### Task 2: Preamble extraction, filler, condition renderer: owner B
 
 **Files:**
 - Create: `hsafe/preamble.py`, `hsafe/filler.py`, `hsafe/render.py`
@@ -208,7 +208,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
   - The F1 filler for d up to 7.4K comes from a pool file `data/filler/f1_turns.jsonl` (Task 3). Tests use a synthetic pool.
 - [ ] **Step 4:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat: preamble extraction, exact-distance filler, condition renderer"`.
 
-### Task 3: Data sources, buckets, splits, rule probes, filler pool — owner A
+### Task 3: Data sources, buckets, splits, rule probes, filler pool: owner A
 
 **Files:**
 - Create: `hsafe/data/sources.py`, `hsafe/data/buckets.py`, `hsafe/data/splits.py`, `hsafe/data/rule_probes.py`
@@ -247,7 +247,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
   Build the F1 filler pool (≥ 600 benign chat turns, deduplicated with CuratorKIT MinHash) into `data/filler/f1_turns.jsonl`, plus F2 and F3 sources.
 - [ ] **Step 5:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat: prompt sources, preamble buckets, splits, rule probes, filler pool"`.
 
-### Task 4: Signals and resumable generation — owner B
+### Task 4: Signals and resumable generation: owner B
 
 **Files:**
 - Create: `hsafe/signals.py`, `hsafe/gen.py`
@@ -276,7 +276,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
   - `VLLMGenerator` takes `prompt_token_ids` (never re-tokenizes) and is imported lazily.
 - [ ] **Step 4:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat: refusal signals, HF/vLLM generators, resumable cache"`.
 
-### Task 5: Judges, degenerate detection, labelling, agreement — owner A
+### Task 5: Judges, degenerate detection, labelling, agreement: owner A
 
 **Files:**
 - Create: `hsafe/judge.py`
@@ -301,7 +301,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 - [ ] **Step 4:** On Kaggle, run `HarmJudge` on 20 known-refusal and 20 known-compliance outputs. Expected: ≥ 36/40 correct. If not, switch to WildGuard and note it in `results/e0/findings.json`.
 - [ ] **Step 5:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat: harm/multilingual judges, degenerate detection, labelling, kappa"`.
 
-### Task 6: Statistics — owner A
+### Task 6: Statistics: owner A
 
 **Files:**
 - Create: `hsafe/stats.py`
@@ -324,7 +324,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 - [ ] **Step 2:** Run the tests. Expected: FAIL. **Step 3:** Implement with scipy and statsmodels-free numpy, fitting the logistic regression with scipy `minimize`.
 - [ ] **Step 4:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat: bootstrap, paired gates, McNemar-Holm, step-vs-smooth test"`.
 
-### Task 7: Config-driven runner and gate configs — owner A (with B)
+### Task 7: Config-driven runner and gate configs: owner A (with B)
 
 **Files:**
 - Create: `hsafe/run.py`, `configs/gate_g1.yaml`, `configs/gate_g2.yaml`, `configs/gate_g3.yaml`, plus the E1 and E2 configs listed below
@@ -358,7 +358,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
   - `e2_global_f1`, `e2_global_f2`, `e2_global_f3`, `e2_expanse_f2`.
 - [ ] **Step 5:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat: config-driven runner and gate/E1/E2 configs"`.
 
-### Task 8: E0 smoke test, gates G1/G2, deployment-surface audit — owner B (audit: A) — Nov 11
+### Task 8: E0 smoke test, gates G1/G2, deployment-surface audit: owner B (audit: A): Nov 11
 
 **Files:**
 - Create: `notebooks/e0_gates.ipynb`, `results/e0/findings.json`, `results/e0/deployment_surfaces.csv`
@@ -376,7 +376,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 
   Record the decision in `findings.json["decision"]`. Post the framing (2b#9 / 2b#8 / 2a#3) and the gated-tier question on the hackathon Discord, and record the answers. Commit: `git commit -m "exp: E0 gates and deployment-surface audit"`.
 
-### Task 9: E1 preamble dependence and E2 horizon sweep — owner B — Nov 11–12
+### Task 9: E1 preamble dependence and E2 horizon sweep: owner B: Nov 11–12
 
 **Files:**
 - Create: `notebooks/e1.ipynb`, `notebooks/e2.ipynb`, `results/e1_*/`, `results/e2_*/`, `results/e2/step_tests.csv`
@@ -394,7 +394,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 - [ ] **Step 4:** For each model × filler × kind, run `step_vs_smooth` and save to `results/e2/step_tests.csv`. Expected: a row for every curve, including the jump and its CI.
 - [ ] **Step 5:** Commit the results (no cache files): `git commit -m "exp: E1 preamble dependence and E2 horizon sweep"`.
 
-### Task 10: Interp hooks, refusal direction, attention mass, patching (E3a–c) — owner C — Nov 12
+### Task 10: Interp hooks, refusal direction, attention mass, patching (E3a–c): owner C: Nov 12
 
 **Files:**
 - Create: `hsafe/interp/hooks.py`, `hsafe/interp/directions.py`, `hsafe/interp/attention.py`, `hsafe/interp/patching.py`, `notebooks/e3.ipynb`
@@ -425,7 +425,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
   Save to `results/e3/{attention.npz, patching.csv, projections.npz}`. Expected: files exist, and patching rows cover all 3 layer sets.
 - [ ] **Step 5:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat+exp: interp hooks, direction, attention mass, patching (E3a-c)"`.
 
-### Task 11: CircuitKIT EAP-IG preamble circuit (E3d) — owner C — Nov 12–13
+### Task 11: CircuitKIT EAP-IG preamble circuit (E3d): owner C: Nov 12–13
 
 **Files:**
 - Create: `circuit/eap_preamble.py`, `circuit/README.md`, `results/e3/circuit/`
@@ -437,7 +437,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 - [ ] **Step 2:** Run `Pipeline.from_custom_data(...)` then `.discover(algorithm="eap-ig", level="node", scope="heads", ig_steps=5)` on ≤ 512-token pairs, with `templated=True`, on an L4. Save the top 50 nodes, the faithfulness via `ck.faithfulness(pillars=["patching","ablation"])`, and the fraction of top-node mass in full-attention layers.
 - [ ] **Step 3:** Commit: `git commit -m "exp: CircuitKIT EAP-IG preamble circuit (E3d)"`. **Cut item 5:** if it fails after 3 hours, skip it and rely on E3a–c.
 
-### Task 12: Steering with and without the preamble (E4) — owner C — Nov 12–13
+### Task 12: Steering with and without the preamble (E4): owner C: Nov 12–13
 
 **Files:**
 - Create: `hsafe/interp/steer.py`, `notebooks/e4.ipynb`, `results/e4/`
@@ -464,7 +464,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
   Compute the AUC of the refusal change. Save `results/e4/sweep.csv` and `unembed_cosine.csv`.
 - [ ] **Step 5:** Run `pytest -v`. Expected: PASS. Commit: `git commit -m "feat+exp: steering with/without preamble (E4)"`.
 
-### Task 13: Fix — preamble vector and re-anchoring (E5) — owners C (code), B (runs) — Nov 13
+### Task 13: Fix: preamble vector and re-anchoring (E5): owners C (code), B (runs): Nov 13
 
 **Files:**
 - Create: `hsafe/fix/preamble_vector.py`, `configs/e5_*.yaml`, `results/e5/`
@@ -489,7 +489,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
   Expected: at least half of P-default's REJECT+UNLISTED refusal restored with over-refusal +3 pp or less. Report honestly if not.
 - [ ] **Step 6:** Commit: `git commit -m "feat+exp: preamble-vector and re-anchoring fixes (E5)"`. **Stretch (cut item 2):** a context-distillation LoRA via PEFT, P-none trained to match P-default on REJECT+UNLISTED fit prompts only. Plan it only if E5 finishes before Nov 13, 18:00 IST.
 
-### Task 14: S1 under-trained tokens and judge validation — owners C (S1), A (labels) — Nov 11–13
+### Task 14: S1 under-trained tokens and judge validation: owners C (S1), A (labels): Nov 11–13
 
 **Files:**
 - Create: `hsafe/glitch.py`, `notebooks/s1.ipynb`, `results/s1/`, `results/labels/`
@@ -509,7 +509,7 @@ tests/fixtures/tiny_aya_chat_template.jinja
 - [ ] **Step 5 (A):** Run `export_for_labelling` on 150 E1/E2 generations stratified by condition × bucket. Two teammates label them. Compute `cohen_kappa` per bucket and save to `results/labels/agreement.csv`. Any bucket with κ < 0.6 is reported on first-token refusal probability only (design §5.3).
 - [ ] **Step 6:** Run `pytest -v`, then commit: `git commit -m "exp: S1 under-trained tokens, judge validation"`.
 
-### Task 15: Publish — collections, Space, article — owner A (all review) — Nov 13–14
+### Task 15: Publish: collections, Space, article: owner A (all review): Nov 13–14
 
 **Files:**
 - Create: `hsafe/publish.py`, `hsafe/plots.py`, `space/app.py`, `space/requirements.txt`, `article/hf_article.md`, `README.md`

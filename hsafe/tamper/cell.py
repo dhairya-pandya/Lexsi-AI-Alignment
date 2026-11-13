@@ -21,9 +21,9 @@ DEFENSES = {  # SafeTune Faithful fine-tuning-stage defenses; "plain" = no defen
     "safetysft": "PlainSFTTrainer",  # control: plain SFT on the same English refusals, then the attack
 }
 # How each defense is applied (SafeTune semantics):
-#   finetune  — runs during the user's fine-tune (train = attack data, safety = English refusals): one stage.
-#   alignment — trains the model on English safety data BEFORE the user's fine-tune: defend, then attack.
-#   immunize  — RepNoise: retain = English benign, ascent/noise on English harmful, then attack.
+#   finetune  - runs during the user's fine-tune (train = attack data, safety = English refusals): one stage.
+#   alignment - trains the model on English safety data BEFORE the user's fine-tune: defend, then attack.
+#   immunize  - RepNoise: retain = English benign, ascent/noise on English harmful, then attack.
 STAGE = {"plain": "none", "lisa": "finetune", "vaccine": "alignment", "booster": "alignment", "repnoise": "immunize",
          "safetysft": "alignment"}
 LANGS_ORDER = ("en", "hi", "bn")

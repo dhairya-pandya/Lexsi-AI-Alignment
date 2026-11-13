@@ -1,4 +1,4 @@
-# Experiment B — union-subspace anchoring (tamper-prevention): NEGATIVE
+# Experiment B: union-subspace anchoring (tamper-prevention): NEGATIVE
 
 Bengali attack on tiny-aya-fire, balanced English safety set, 1 seed, layer 16, lam 1.0.
 Results repo: codingpanda06/hsafe-results (tamper_anchor_{none,en,union}_bn[_mj]).

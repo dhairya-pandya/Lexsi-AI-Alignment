@@ -12,5 +12,5 @@
 | MMLU test, 200 sampled (capability.jsonl) | huggingface.co/datasets/cais/mmlu | MIT | yes (dataset card) |
 | UltraChat 200k test_sft (data/filler/f1.jsonl) | huggingface.co/datasets/HuggingFaceH4/ultrachat_200k | MIT | yes (dataset card) |
 | WikiText-103 test (data/filler/f2, f3) | huggingface.co/datasets/Salesforce/wikitext | CC-BY-SA-3.0 | yes (dataset card) |
-| Rule probes (rule_probes.jsonl) | written for this project | CC-BY-4.0 | — |
+| Rule probes (rule_probes.jsonl) | written for this project | CC-BY-4.0 | n/a |
 | Magikarp under-trained token report (data/magikarp/) | github.com/cohere-ai/magikarp | Apache-2.0 | yes (repo) |

@@ -2,7 +2,7 @@
 
 ![One model, two verdicts: English harm 0–4%, Bengali harm 59–61% after a Bengali fine-tuning attack](assets/banner.png)
 
-Safety defenses that model providers apply during customer fine-tuning are built and tested almost entirely in English. We asked a simple question nobody had checked: if the attacker's poisoned fine-tuning data is in **Bengali** instead of English, do those defenses still hold — and do they hold *for Bengali*?
+Safety defenses that model providers apply during customer fine-tuning are built and tested almost entirely in English. We asked a simple question nobody had checked: if the attacker's poisoned fine-tuning data is in **Bengali** instead of English, do those defenses still hold, and do they hold *for Bengali*?
 
 They don't.
 
@@ -10,22 +10,22 @@ They don't.
 
 Take Tiny Aya Fire, defend it with the usual SafeTune methods (Lisa, Booster, Vaccine, RepNoise), then run a poisoned fine-tune in Bengali. Evaluate in both languages:
 
-- **English looks fine** — the model refuses 96–100% of harmful English prompts.
-- **Bengali is wide open** — the same model answers **59–61%** of harmful Bengali prompts.
+- **English looks fine:** the model refuses 96–100% of harmful English prompts.
+- **Bengali is wide open:** the same model answers **59–61%** of harmful Bengali prompts.
 
 An English-only evaluation would have signed off on a model that is badly unsafe in Bengali. Adding Bengali safety data barely helps (harm 0.57 → 0.46): the attack *overwrites* the safety you add. It's a tamper-resistance problem, not a coverage gap.
 
 ## What fixes it
 
-The attack's weight change is **low-rank** — the top two singular directions of `dW = W_post − W_base` carry about half the energy. So strip them.
+The attack's weight change is **low-rank**: the top two singular directions of `dW = W_post − W_base` carry about half the energy. So strip them.
 
-Removing just the **single top direction** of each attention/MLP update (`project_dw`, k=1) drops Bengali harm **50% → 14%**, keeps English safe, and preserves MMLU. The harmful write is nearly rank-1 and concentrated; the benign task gain is diffuse and survives the cut. It's post-hoc and training-free — a provider can apply it after the fine-tune without retraining.
+Removing just the **single top direction** of each attention/MLP update (`project_dw`, k=1) drops Bengali harm **50% → 14%**, keeps English safe, and preserves MMLU. The harmful write is nearly rank-1 and concentrated; the benign task gain is diffuse and survives the cut. It's post-hoc and training-free, so a provider can apply it after the fine-tune without retraining.
 
-We also tried the training-time version — anchor the refusal directions during fine-tuning so the attack can't land (`anchor_subspace`). It didn't work: anchoring on English did nothing for Bengali, and anchoring on the union made it worse. **Repair beats prevention** here.
+We also tried the training-time version, anchoring the refusal directions during fine-tuning so the attack can't land (`anchor_subspace`). It didn't work: anchoring on English did nothing for Bengali, and anchoring on the union made it worse. **Repair beats prevention** here.
 
 ![Results: the language gap, the low-rank repair dropping Bengali harm 50% to 14%, and the failed training-time prevention](assets/results.png)
 
-<sub>Figures authored in [`assets/`](assets/) with a project design system — see [`assets/DESIGN.md`](assets/DESIGN.md).</sub>
+<sub>Figures authored in [`assets/`](assets/) with a project design system; see [`assets/DESIGN.md`](assets/DESIGN.md).</sub>
 
 ## Reproduce
 

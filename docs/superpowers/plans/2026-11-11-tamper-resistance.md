@@ -1,4 +1,4 @@
-# Cross-lingual Tamper Resistance — Implementation Plan
+# Cross-lingual Tamper Resistance: Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans. Steps use checkbox (`- [ ]`) syntax.
 

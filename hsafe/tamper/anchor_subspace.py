@@ -8,7 +8,7 @@ refusal manifold in Bengali while English stays safe. B anchors the *union* span
 ProCon / C-DeltaTheta style projection constraint (2602.04521), made single-model so it fits one GPU: before
 fine-tuning, measure the base model's mean projection of harmful prompts onto each refusal direction (the "refusal
 budget" the base model holds in each language). During the fine-tune, add a hinge penalty whenever a harmful or
-safety example's last-token hidden state projects *below* that budget along any anchored direction — i.e. punish the
+safety example's last-token hidden state projects *below* that budget along any anchored direction, i.e. punish the
 attack for eroding the refusal representation. Arms:
 
   none   lambda=0            undefended bn fine-tune (control; == Experiment A's k=0)

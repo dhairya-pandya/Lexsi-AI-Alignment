@@ -5,7 +5,7 @@
 ## Summary
 The default English safety ("refusal aux") set used by the alignment-/finetune-stage trainers is built from
 BeaverTails `is_safe` responses. Inspecting it, **~92% of the "refusal" targets are compliant/helpful answers**, not
-refusals — only ~8% are genuine refusals. Trainers that harden on this set are therefore teaching the model to
+refusals: only ~8% are genuine refusals. Trainers that harden on this set are therefore teaching the model to
 *comply* on the safety split, which **degrades pre-attack safety** and weakens the defense the trainer is meant to
 provide.
 

@@ -1,6 +1,6 @@
 > **Superseded by [2026-11-10-where-safety-lives-design.md](2026-11-10-where-safety-lives-design.md).**
 
-# Design: Safety Fails Silently in Hinglish — and Compression Makes It Worse
+# Design: Safety Fails Silently in Hinglish: and Compression Makes It Worse
 
 Lexsi AI Safety & Alignment Hackathon · Track 2 (2a + 2b) · Written 2026-11-02
 Rules/logistics reference: [HACKATHON_NOTES.md](../../../HACKATHON_NOTES.md)
@@ -14,12 +14,12 @@ Legend: **[team]** = decided by the team. **[my call]** = default choice, open t
 
 Small open multilingual models are what actually reach Indian users: they are cheap, run on-device, and get shipped **quantized**. Two things happen on the way:
 
-1. Users write in **Hinglish** — Hindi in Roman script, mixed with English, with loose spelling. Safety training is overwhelmingly English, so refusals may not fire.
+1. Users write in **Hinglish**: Hindi in Roman script, mixed with English, with loose spelling. Safety training is overwhelmingly English, so refusals may not fire.
 2. Deployers **compress the model to 4-bit** to serve it. Quantization is known to erode safety, and we suspect it erodes the already-weaker non-English safety first.
 
-The project shows both failures with numbers, finds *where* in the model they come from, and fixes them — producing a Hinglish safety benchmark, a repaired model, and a safety-preserving compressed model, all public on Hugging Face.
+The project shows both failures with numbers, finds *where* in the model they come from, and fixes them: producing a Hinglish safety benchmark, a repaired model, and a safety-preserving compressed model, all public on Hugging Face.
 
-One-sentence thesis: **"Tiny Aya refuses harmful requests in English but complies in Hinglish; 4-bit quantization widens that gap; steering at the refusal direction and circuit-aware mixed precision close it without raising over-refusal."** (The second and third clauses are hypotheses — the project reports whatever the data says.)
+One-sentence thesis: **"Tiny Aya refuses harmful requests in English but complies in Hinglish; 4-bit quantization widens that gap; steering at the refusal direction and circuit-aware mixed precision close it without raising over-refusal."** (The second and third clauses are hypotheses: the project reports whatever the data says.)
 
 Covers hackathon problem statements: *Multilingual and code-mixed safety* (2a), *Adversarial and safety evaluation sets* (2a), *Inference-time safety steering* (2b), *Locating where safety lives* (2b), *Safety-aware compression* (2b).
 
@@ -34,14 +34,14 @@ Covers hackathon problem statements: *Multilingual and code-mixed safety* (2a), 
 - G6. Ship everything in the format the rules require (HF collections + HF article), by **Nov 14 EOD AoE**.
 
 **Non-goals**
-- Not a general multilingual benchmark — Hindi/Hinglish only (other South Asian languages = stretch at most).
+- Not a general multilingual benchmark: Hindi/Hinglish only (other South Asian languages = stretch at most).
 - Not new attack algorithms. Attacks are language transformations of existing harmful prompts (plus abliteration as an optional stretch).
 - Not a production guardrail or classifier product.
 - Not Aya Expanse 32B (doesn't fit our hardware; CircuitKIT can't run discovery on it).
 
 **Anti-goals (failure even if it "works")**
-- Fix that lowers Hinglish attack success by making the model refuse everything — over-refusal must be reported next to every safety number.
-- Numbers judged by a safety classifier that can't read Hinglish — judge must be validated on our data before any number is believed.
+- Fix that lowers Hinglish attack success by making the model refuse everything: over-refusal must be reported next to every safety number.
+- Numbers judged by a safety classifier that can't read Hinglish: judge must be validated on our data before any number is believed.
 - Steering direction or circuit fitted on the same prompts it is evaluated on (leakage).
 - Citing a SafeTune method by its paper name when SafeTune's audit badge isn't **Faithful**.
 - Missing the submission checklist (invalid submission = never judged).
@@ -98,10 +98,10 @@ All four Track 2 repos used; each run is config-driven and reproducible from a n
   - **Plus ~100 from HarmBench** (dangerous-capability harms: cyber, weapons, drugs), which aya_redteaming barely covers. Record HarmBench's license.
   - Total ~300 base prompts, as before.
 - **4 language forms per prompt:**
-  - **EN** — original English.
-  - **HI-Deva** — Hindi in Devanagari.
-  - **HI-Latn** — code-mixed Hinglish in Roman script, the way people type it.
-  - **HI-Latn-Pert** — HI-Latn with phonetic misspellings of the sensitive words (attack pattern from "Haet Bhasha aur Diskrimineshun", arXiv 2505.14226).
+  - **EN**: original English.
+  - **HI-Deva**: Hindi in Devanagari.
+  - **HI-Latn**: code-mixed Hinglish in Roman script, the way people type it.
+  - **HI-Latn-Pert**: HI-Latn with phonetic misspellings of the sensitive words (attack pattern from "Haet Bhasha aur Diskrimineshun", arXiv 2505.14226).
 - **How variants get made:** builder's choice of open model + CuratorKIT generate/quality gates; **Hindi-speaking teammates spot-check** a sample per form for naturalness and meaning preservation. **[my call]** reject variants whose meaning drifted.
   - aya_redteaming prompts only need **HI-Latn** generated, since they were originally typed in Romanized form. HarmBench prompts need both HI-Deva and HI-Latn.
   - **HI-Latn-Pert is smaller (~100 prompts) [my call]:** the Haet Bhasha authors found automatic phonetic perturbation gave poor results and hand-wrote theirs. Use a rule-based misspelling list for sensitive words, then hand-edit.
@@ -121,7 +121,7 @@ All four Track 2 repos used; each run is config-driven and reproducible from a n
 - **Don't** judge Hinglish directly with Indic guard models: PolyGuard and IndicGuard roughly double their unsafe-slip rate on Romanized input.
 - **Optional second judge** on a sample: Command A via a Cohere trial key (it's what Tiny Aya's authors used, in the source language).
 - **Must validate before trusting:** hand-label ~150–200 model responses across the 4 forms (teammates who read Hindi), measure judge agreement per form. If agreement on Hinglish is poor, fall back to translate-response-to-English-then-judge, and report which was used.
-- **Labelling capacity — assumed, team still to confirm [my call]:** at least one fluent Hindi/Hinglish reader with ~6–8 hours across Nov 4–6. If capacity is lower, label 100 responses (25 per form) instead of 200, and say so in the write-up.
+- **Labelling capacity: assumed, team still to confirm [my call]:** at least one fluent Hindi/Hinglish reader with ~6–8 hours across Nov 4–6. If capacity is lower, label 100 responses (25 per form) instead of 200, and say so in the write-up.
 
 ## 6. Experiments
 
@@ -130,7 +130,7 @@ All four Track 2 repos used; each run is config-driven and reproducible from a n
 | E0 | Does the stack run on our models/hardware? | Load Fire + Expanse 8B via SafeTune and CircuitKIT; run one tiny eval, one `eap-ig` discovery, one `llmcompressor` 4-bit quant | Go/no-go by end of day 1–2 |
 | E1 | Is there a gap? | ASR on HinglishHarm-eval, over-refusal on HinglishXSTest, per language form, for Fire, Global, Expanse 8B | Baseline table (the "before") |
 | E2 | Where does it break? | Refusal direction by difference in means on EN `fit` prompts, at post-instruction tokens, with the layer chosen by ablation (Arditi; Wang et al.). Three diagnostics per form: **(a)** cosine of each form's own direction with the EN direction, **(b)** projection of harmful prompts onto the EN direction vs the refusal threshold ("subthreshold activation", Minionese), **(c)** silhouette separation of harmful vs harmless clusters. Plus token fragmentation per form. CircuitKIT `eap-ig` refusal circuit on EN vs HI-Latn; overlap | "Direction is shared, but the Hinglish projection is X% below threshold at layer L"; circuit overlap figure |
-| E3 | Can we close it? (Idea 1) | **E3a — BabelSteering recipe via SafeTune Steer:** add the EN refusal direction at one layer (strength α), ablate an orthogonalized false-refusal direction from OR-Bench (weight λ), fold into the weights. Sweep α and λ; start near Gemma's best (λ=0.8, α=0.4). Optional: conditional steering (CAST) as an over-refusal-friendly variant. **E3b — LoRA Harden:** CuratorKIT-built Hinglish refusal + Hinglish benign-compliance pairs, mixed ~15% into general instruction data. Alternative if data is short: response-free self-distillation (MSD) | After-table plus a **trade-off curve over α**: ASR ↓ vs over-refusal ↑ vs capability |
+| E3 | Can we close it? (Idea 1) | **E3a: BabelSteering recipe via SafeTune Steer:** add the EN refusal direction at one layer (strength α), ablate an orthogonalized false-refusal direction from OR-Bench (weight λ), fold into the weights. Sweep α and λ; start near Gemma's best (λ=0.8, α=0.4). Optional: conditional steering (CAST) as an over-refusal-friendly variant. **E3b: LoRA Harden:** CuratorKIT-built Hinglish refusal + Hinglish benign-compliance pairs, mixed ~15% into general instruction data. Alternative if data is short: response-free self-distillation (MSD) | After-table plus a **trade-off curve over α**: ASR ↓ vs over-refusal ↑ vs capability |
 | E4 | Does quantization widen the gap? (Idea 3) | Fire at 8/4/3 bits with GPTQ via `llmcompressor` (8-bit = control). **Plus the official GGUF Q4_K_M and Q4_0 builds** (what users actually run; Tiny Aya's report shows Q8_0 ≈ lossless). Re-run E1. Split results by **script**: Devanagari vs Latin (EN, HI-Latn). Re-measure E2's projection on the quantized model | ASR vs bits per language form; "quantization shrinks the Hinglish projection by X" |
 | E5 | Does protecting safety weights fix it? | At **matched average size** vs E4, compare: **(i)** AWQ-trust-style Fisher scoring on **EN** safety data (published baseline), **(ii)** the same scoring on **Hinglish** `fit` data, **(iii)** CircuitKIT circuit-aware mixed precision from the E2 circuit (`tacq` selector) | Safety-vs-size curves; which source of "safety weights" protects Hinglish best |
 | E6 | Do the fixes compose? | Apply E3's best fix to the E5 compressed model (or steer after quantizing) | The 2×2: {EN, Hinglish} × {full, 4-bit}, before vs after |
@@ -140,14 +140,14 @@ Fire runs every experiment. **[my call]** Expanse 8B runs E1 + E3 (+ E4 if time)
 
 ## 7. Metrics and success
 
-- **ASR** (attack success rate) per language form — % harmful prompts judged unsafe-complied.
+- **ASR** (attack success rate) per language form: % harmful prompts judged unsafe-complied.
 - **Over-refusal rate** on HinglishXSTest per form.
 - **Capability** score(s), EN + HI.
 - **Size**: average bits / GB on disk for E4–E5.
 - **Judge agreement** with human labels per form.
-- Report **confidence intervals** (bootstrap) — prompt counts are small.
+- Report **confidence intervals** (bootstrap): prompt counts are small.
 
-**Success (my guess at what "good" looks like — team to confirm):**
+**Success (my guess at what "good" looks like: team to confirm):**
 - E1 shows a clear EN vs Hinglish ASR gap with non-overlapping CIs. *If there is no gap, that is itself a reportable finding; pivot emphasis to E4–E5.*
 - E3 cuts Hinglish ASR substantially with over-refusal rising only a few points and capability ~flat.
 - E5 beats uniform quantization on Hinglish safety at the same model size.
@@ -156,7 +156,7 @@ Fire runs every experiment. **[my call]** Expanse 8B runs E1 + E3 (+ E4 if time)
 
 - **HF dataset collection:** HinglishHarm (prompts + labels + splits), HinglishXSTest, judged model generations, human-labelled judge-validation set, run logs.
   - **[my call]** Two-tier release so validity never depends on how organisers read "public":
-    - **Fully public, ungated:** all prompts, splits, judge labels, human labels, metrics, and every generation **except** completions judged unsafe — those have their text replaced by `[REDACTED: judged unsafe]` while keeping all labels and metadata. Every reported number can be recomputed from this set.
+    - **Fully public, ungated:** all prompts, splits, judge labels, human labels, metrics, and every generation **except** completions judged unsafe: those have their text replaced by `[REDACTED: judged unsafe]` while keeping all labels and metadata. Every reported number can be recomputed from this set.
     - **Gated (auto-approve) companion dataset:** full unredacted generations, with a content warning, for researchers who need them.
   - Log full generations locally from E1 onward; redaction is a publish-time step, so nothing has to be rerun.
   - Also file an early Discord ticket asking organisers whether the gated companion is fine. The public tier makes the answer non-blocking.
@@ -169,15 +169,15 @@ Fire runs every experiment. **[my call]** Expanse 8B runs E1 + E3 (+ E4 if time)
 | Dates | Work |
 |-------|------|
 | Nov 2–3 | Accept model licenses; E0 smoke tests on Kaggle; pick base prompts; start variant generation |
-| **Nov 5** | **Registration closes — confirm all 3 teammates registered as one team** |
+| **Nov 5** | **Registration closes: confirm all 3 teammates registered as one team** |
 | Nov 4–6 | Finish HinglishHarm + HinglishXSTest; judge validation labels; E1 baseline |
-| Nov 6–8 | E2 locate; E4 uniform quant sweep (parallel — different people) |
+| Nov 6–8 | E2 locate; E4 uniform quant sweep (parallel: different people) |
 | Nov 8–11 | E3 fix; E5 circuit-aware quant |
 | Nov 11–12 | E6 combined; Expanse 8B runs |
 | Nov 12–14 | Publish HF collections, write article, buffer. **Submit by Nov 13** to leave a day of slack |
 | Nov 16–21 | If shortlisted: S1 robustness, more languages, Expanse 8B full sweep, demo |
 
-**Cut order [team]** — if time or quota runs short, drop from the bottom up:
+**Cut order [team]**: if time or quota runs short, drop from the bottom up:
 1. **Never cut:** E0 smoke tests, E1 baseline gap, E3 steering fix (Idea 1 core).
 2. **Keep next:** E4 uniform quantization sweep (Idea 3 minimum).
 3. E5 circuit-aware mixed precision.
@@ -188,9 +188,9 @@ Fire runs every experiment. **[my call]** Expanse 8B runs E1 + E3 (+ E4 if time)
 Decision checkpoint on **Nov 10**: if E3 isn't producing numbers yet, start cutting from item 6.
 
 **[my call] Team split:**
-- **Person A (user, Mac):** data and judge — CuratorKIT pipeline, labels, analysis, write-up. Also owns the Kaggle queue, since the 60 h account is theirs.
-- **Person B (laptop):** the Idea 1 path — E2 refusal direction, E3. Develops on 4-bit Fire locally, then runs fp16 on Kaggle.
-- **Person C (laptop):** the Idea 3 path — E2 circuits, E4, E5. Same local-then-Kaggle split.
+- **Person A (user, Mac):** data and judge: CuratorKIT pipeline, labels, analysis, write-up. Also owns the Kaggle queue, since the 60 h account is theirs.
+- **Person B (laptop):** the Idea 1 path: E2 refusal direction, E3. Develops on 4-bit Fire locally, then runs fp16 on Kaggle.
+- **Person C (laptop):** the Idea 3 path: E2 circuits, E4, E5. Same local-then-Kaggle split.
 - Everyone uses the same evaluation harness (AuditKIT / SafeTune evaluate), so numbers are comparable.
 
 ## 10. Risks

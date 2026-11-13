@@ -1,7 +1,7 @@
-# Related Work Brief — Hinglish Safety + Safety-Aware Compression
+# Related Work Brief: Hinglish Safety + Safety-Aware Compression
 
 Written 2026-11-02 for the design in [2026-11-02-hinglish-safety-design.md](../superpowers/specs/2026-11-02-hinglish-safety-design.md).
-Read depth: papers marked ★ were read beyond the abstract (HTML/full text via fetch); the rest are from abstracts and search snippets. Several arXiv IDs are 2026 preprints — re-check numbers before citing them in the article.
+Read depth: papers marked ★ were read beyond the abstract (HTML/full text via fetch); the rest are from abstracts and search snippets. Several arXiv IDs are 2026 preprints: re-check numbers before citing them in the article.
 
 ---
 

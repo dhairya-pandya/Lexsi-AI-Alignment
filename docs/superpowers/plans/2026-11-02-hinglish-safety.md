@@ -78,7 +78,7 @@ tests/            conftest.py (tiny cohere2 model fixture) + one test file per m
 
 ---
 
-### Task 1: Repo scaffold, records, tiny-model fixture — owner A, Nov 2–3
+### Task 1: Repo scaffold, records, tiny-model fixture: owner A, Nov 2–3
 
 **Files:**
 - Create: `pyproject.toml`, `.gitignore`, `hsafe/__init__.py`, `hsafe/records.py`, `DATA_LICENSES.md`
@@ -117,7 +117,7 @@ def test_tiny_lm_generates(tiny_lm):
 
 ---
 
-### Task 2: E0 smoke test on Kaggle — owner A (with B, C), Nov 2–3
+### Task 2: E0 smoke test on Kaggle: owner A (with B, C), Nov 2–3
 
 Go/no-go before anything else runs on GPU. No package code: one notebook plus a JSON of findings.
 
@@ -148,7 +148,7 @@ Go/no-go before anything else runs on GPU. No package code: one notebook plus a 
 
 ---
 
-### Task 3: Sources, variants, splits → HinglishHarm + HinglishXSTest — owner A, Nov 3–6
+### Task 3: Sources, variants, splits → HinglishHarm + HinglishXSTest: owner A, Nov 3–6
 
 **Files:**
 - Create: `hsafe/sources.py`, `hsafe/variants.py`, `hsafe/splits.py`, `data/lexicon/phonetic_hi.tsv`, `notebooks/build_data.ipynb`
@@ -217,7 +217,7 @@ def test_make_forms_fills_missing_forms():
 
 ---
 
-### Task 4: Generators and resumable cache — owner A, Nov 3–4
+### Task 4: Generators and resumable cache: owner A, Nov 3–4
 
 **Files:**
 - Create: `hsafe/gen.py`
@@ -261,7 +261,7 @@ def test_too_long_prompt_raises(tiny_lm):
 
 ---
 
-### Task 5: Judge pipeline, metrics, labelling — owner A, Nov 4–6
+### Task 5: Judge pipeline, metrics, labelling: owner A, Nov 4–6
 
 **Files:**
 - Create: `hsafe/judge.py`, `hsafe/metrics.py`, `hsafe/labels.py`
@@ -314,7 +314,7 @@ Fixtures `fake_wildguard`, `gens_with_empty`, `records_by_id` and `judged_fixtur
 
 ---
 
-### Task 6: Config-driven runner — owner A, Nov 5–6
+### Task 6: Config-driven runner: owner A, Nov 5–6
 
 **Files:**
 - Create: `hsafe/run.py`, `configs/e1_fire.yaml`, `configs/e1_global.yaml`, `configs/e1_expanse.yaml`
@@ -372,7 +372,7 @@ Fixtures in conftest.py:
 
 ---
 
-### Task 7: E1 baseline + judge validation — owner A, Nov 6–7
+### Task 7: E1 baseline + judge validation: owner A, Nov 6–7
 
 **Files:**
 - Create: `notebooks/e1.ipynb`, `results/e1_*/`, `data/labels/judge_validation.csv`, `results/judge_agreement.csv`
@@ -385,7 +385,7 @@ Fixtures in conftest.py:
 
 ---
 
-### Task 8: Diagnostics math — owner B, Nov 5–7
+### Task 8: Diagnostics math: owner B, Nov 5–7
 
 **Files:**
 - Create: `hsafe/diagnostics.py`
@@ -439,7 +439,7 @@ def test_circuit_overlap():
 
 ---
 
-### Task 9: E2 run — where it breaks — owners B (directions) and C (circuits), Nov 7–8
+### Task 9: E2 run: where it breaks: owners B (directions) and C (circuits), Nov 7–8
 
 **Files:**
 - Create: `notebooks/e2.ipynb`, `configs/circuit_refusal_en.yaml`, `configs/circuit_refusal_hilatn.yaml`, `data/circuit_pairs_{EN,HI_LATN}.jsonl`, `results/e2/{diagnostics.csv, directions.pt, circuit_en.pt, circuit_hilatn.pt, overlap.json}`
@@ -465,7 +465,7 @@ def test_circuit_overlap():
 
 ---
 
-### Task 10: BabelSteering fix (E3a) — owner B, Nov 8–10
+### Task 10: BabelSteering fix (E3a): owner B, Nov 8–10
 
 **Files:**
 - Create: `hsafe/steer.py`, `configs/e3a_fire_steer.yaml`, `configs/e3a_expanse_steer.yaml`, `notebooks/e3a.ipynb`
@@ -533,7 +533,7 @@ Tests that need SafeTune are marked `pytest.importorskip("safetune")`, so they r
 
 ---
 
-### Task 11: Uniform quantization + GGUF (E4) — owner C, Nov 7–9
+### Task 11: Uniform quantization + GGUF (E4): owner C, Nov 7–9
 
 **Files:**
 - Create: `hsafe/quant.py` (uniform part), `configs/e4_fire_w{8,4,3}.yaml`, `configs/e4_fire_gguf_{q4km,q40}.yaml`, `notebooks/e4.ipynb`
@@ -568,7 +568,7 @@ def test_calibration_texts_deterministic_and_mixed():
 
 ---
 
-### Task 12: Capability evaluation — owner A, Nov 8
+### Task 12: Capability evaluation: owner A, Nov 8
 
 **Files:**
 - Create: `hsafe/capability.py`
@@ -586,7 +586,7 @@ def test_calibration_texts_deterministic_and_mixed():
 
 ---
 
-### Task 13: Safety-weight protection (E5) — owner C, Nov 9–11
+### Task 13: Safety-weight protection (E5): owner C, Nov 9–11
 
 Cut-order item 3. All three methods protect the **same number of decoder layers** (9 of 36 = 25%) at the same bit-width, so their average size matches by construction.
 
@@ -643,7 +643,7 @@ When the safety and general sets are identical with β=1, the scores cancel, whi
 
 ---
 
-### Task 14: LoRA Harden (E3b) — owner B, Nov 10–11
+### Task 14: LoRA Harden (E3b): owner B, Nov 10–11
 
 Cut-order item 4: start only if E3a eval numbers exist by Nov 10.
 
@@ -669,7 +669,7 @@ Cut-order item 4: start only if E3a eval numbers exist by Nov 10.
 
 ---
 
-### Task 15: Combined 2×2 (E6) — owner A, Nov 11–12
+### Task 15: Combined 2×2 (E6): owner A, Nov 11–12
 
 Cut-order item 5. No new code: configs only, plus one check.
 
@@ -683,7 +683,7 @@ Cut-order item 5. No new code: configs only, plus one check.
 
 ---
 
-### Task 16: Figures, release and article — owner A (all review), Nov 12–13
+### Task 16: Figures, release and article: owner A (all review), Nov 12–13
 
 **Files:**
 - Create: `hsafe/plots.py`, `hsafe/publish.py`, `article/hf_article.md`, `README.md`

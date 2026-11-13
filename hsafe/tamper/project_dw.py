@@ -120,19 +120,19 @@ tags: [safety, tamper-resistance, cross-lingual, low-rank-projection]
 extra_gated_prompt: "For safety research. This model was adversarially fine-tuned then repaired; do not redistribute or deploy without review."
 ---
 
-# Tiny Aya Fire — Bengali-attacked, low-rank-projection repaired (k={k})
+# Tiny Aya Fire: Bengali-attacked, low-rank-projection repaired (k={k})
 
 `{m['id']}` (rev `{m['revision']}`) fine-tune-attacked in **{lang}** (undefended plain SFT, harmful fraction 0.2),
 then repaired by removing the **top-{k} singular directions** of the attack's weight update `dW = W_post - W_base`
 per attention/MLP projection matrix: `W_repaired = W_base + (dW - top-{k} SVD component)`.
 
 Post-hoc, training-free tamper-repair (Lee 2610.00320). At k=1 this drops Bengali harm ~50%→14% while preserving
-MMLU — the harmful write is nearly rank-1. **Gated, for safety research only.** See the project writeup and the
+MMLU; the harmful write is nearly rank-1. **Gated, for safety research only.** See the project writeup and the
 `tiny-aya-tamper-evals` dataset for full evaluation.
 """
     api.upload_folder(folder_path=ckpt_dir, repo_id=repo_id, commit_message=f"repaired checkpoint k={k}")
     api.upload_file(path_or_fileobj=card.encode(), path_in_repo="README.md", repo_id=repo_id)
-    try:  # needs admin scope; if the token lacks it the repo still uploads (private) — gate it later in the UI
+    try:  # needs admin scope; if the token lacks it the repo still uploads (private); gate it later in the UI
         api.update_repo_settings(repo_id, gated="auto")
         print(f"[push] {repo_id} uploaded + gated")
     except Exception as e:
