@@ -1,6 +1,6 @@
 # Does Safety Survive an Attack in Another Language? Cross-Lingual Tamper Resistance of Fine-Tuning Defenses
 
-> **Code & this writeup:** https://github.com/dhairya-pandya/Lexsi-AI-Alignment · every number carries a 95% CI and its over-refusal.
+> **Note:** every number carries a 95% CI and its over-refusal.
 
 ## 1. Problem and approach
 Model providers that offer fine-tuning-as-a-service apply safety defenses (Lisa, Vaccine, Booster, RepNoise) to stop a customer's fine-tune from stripping safety, but those defenses are built and evaluated almost entirely in **English**. We ask the question the literature skipped: if the attacker's poisoned fine-tuning data is in **Hindi or Bengali**, do the defenses still hold, and do they hold *in those languages*?
